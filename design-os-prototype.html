@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emma Moystner — Design Operating System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --white: #FFFFFF;
+    --off-white: #FAFAF8;
+    --warm-cream: #F2F0EB;
+    --light-gray: #E5E3DE;
+    --mid-gray: #A8A49C;
+    --text: #2C2B28;
+    --text-light: #6B6862;
+    --accent: #1A1917;
+    --gold: #B8963E;
+    --board-bg: #1C1C1E;
+    --board-tile: #2A2A2E;
+    --board-text: #E8CA6E;
+    --font-primary: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  html { scroll-behavior: auto; overflow-x: hidden; }
+
+  body {
+    background: var(--white);
+    color: var(--text);
+    font-family: var(--font-primary);
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* ============ PEOPLE HORIZONTAL SCROLL SECTION ============ */
+  #people-scroll-wrapper {
+    overflow: hidden;
+    background: var(--white);
+  }
+
+  #people-scroll-section {
+    position: relative;
+    height: 100vh;
+    display: flex;
+    flex-wrap: nowrap;
+    width: fit-content;
+  }
+
+  #people-scroll-section::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(to bottom, var(--white) 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  #people-scroll-section.is-pinned::before {
+    opacity: 1;
+  }
+
+  .people-scroll-item {
+    flex-shrink: 0;
+    height: 100vh;
+    position: relative;
+  }
+
+  .people-scroll-item img {
+    height: 100vh;
+    width: auto;
+    display: block;
+  }
+
+  #scroll-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+  }
+
+  /* ============ HERO / TERMINAL ============ */
+  #hero {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--white);
+    position: relative;
+    padding: 2rem;
+  }
+
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 3rem;
+    opacity: 0;
+  }
+
+  .terminal-header svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: var(--mid-gray);
+    stroke-width: 1.5;
+  }
+
+  .terminal-header span {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--mid-gray);
+  }
+
+  /* ============ SPLIT-FLAP BOARD ============ */
+  .flip-board {
+    background: #111113;
+    border-radius: 8px;
+    padding: 2.5rem 3rem 2.5rem;
+    width: 95vw;
+    max-width: 1290px;
+    overflow: hidden;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.04) inset,
+      0 40px 100px rgba(0,0,0,0.25),
+      0 8px 20px rgba(0,0,0,0.12);
+    opacity: 0;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .board-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .board-title-row h2 {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .board-title-row h2 .board-icon {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+  }
+
+  .board-title-row h2 .board-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: #FFFFFF;
+  }
+
+  .board-clock {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.05em;
+  }
+
+  .board-columns {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+    padding: 0 2px;
+  }
+
+  .board-columns span {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .board-columns span:last-child {
+    text-align: left;
+  }
+
+  .flip-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 0.75rem;
+    margin-bottom: 6px;
+    padding: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .flip-row.clickable:hover {
+    background: rgba(184, 150, 62, 0.08);
+    border-radius: 4px;
+  }
+
+  .flip-cell {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+  }
+
+  .flip-cell.right { justify-content: flex-start; }
+
+  .flip-char {
+    width: 27px;
+    height: 42px;
+    background: linear-gradient(
+      to bottom,
+      #2C2C30 0%,
+      #2C2C30 48%,
+      #1A1A1E 48%,
+      #1A1A1E 52%,
+      #262629 52%,
+      #262629 100%
+    );
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #FFFFFF;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 2px 4px rgba(0,0,0,0.5),
+      0 0 0 0.5px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  .flip-char::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 2px;
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.7) 0%,
+      rgba(0,0,0,0.4) 50%,
+      rgba(0,0,0,0.6) 100%
+    );
+    transform: translateY(-50%);
+    z-index: 2;
+  }
+
+  .flip-char::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    top: 49%;
+    height: 4px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(0,0,0,0.15) 40%,
+      rgba(0,0,0,0.15) 60%,
+      transparent
+    );
+    z-index: 1;
+  }
+
+  .flip-char.status-char {
+    color: #6ECF6E;
+  }
+
+  .flip-char.status-char.negative {
+    color: #E85A5A;
+  }
+
+  .flip-char.gold-char {
+    color: #E8CA6E;
+  }
+
+  .flip-char.white-char {
+    color: #FFFFFF;
+  }
+
+  .flip-char.flipping {
+    animation: flipIn 0.06s ease-out;
+  }
+
+  @keyframes flipIn {
+    0% {
+      transform: perspective(200px) rotateX(-50deg);
+      background: linear-gradient(to bottom, #35353A 0%, #35353A 48%, #1A1A1E 48%, #1A1A1E 52%, #2E2E32 52%, #2E2E32 100%);
+    }
+    100% {
+      transform: perspective(200px) rotateX(0deg);
+    }
+  }
+
+  /* ============ HERO SUBTITLE ============ */
+  .hero-tagline {
+    margin-top: 3rem;
+    text-align: center;
+    opacity: 0;
+  }
+
+  .hero-tagline h1 {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 200;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  .hero-tagline h1 em {
+    font-style: italic;
+    font-weight: 300;
+  }
+
+  .hero-tagline p {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--mid-gray);
+    margin-top: 1rem;
+  }
+
+  .scroll-cue {
+    position: fixed;
+    bottom: 3vh;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--mid-gray);
+    opacity: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .scroll-cue .line {
+    width: 1px;
+    height: 24px;
+    background: var(--mid-gray);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.2; transform: scaleY(0.5); }
+    50% { opacity: 0.8; transform: scaleY(1); }
+  }
+
+  /* ============ TICKET SCATTER ============ */
+  #ticket-scatter {
+    position: relative;
+    height: 160vh;
+    background: var(--white);
+    overflow: visible;
+  }
+
+  .ticket-item {
+    position: absolute;
+    pointer-events: none;
+    will-change: transform;
+    filter: drop-shadow(0 12px 40px rgba(0,0,0,0.08));
+  }
+
+  .ticket-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    mask-image: radial-gradient(ellipse 90% 85% at 50% 50%, black 60%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 90% 85% at 50% 50%, black 60%, transparent 100%);
+  }
+
+  .ticket-item.t1 { width: clamp(500px, 60vw, 900px); left: -4.0%; top: 2.3%; z-index: 2; }
+  .ticket-item.t2 { width: clamp(420px, 50vw, 760px); left: 61.4%; top: 12.6%; z-index: 5; }
+  .ticket-item.t3 { width: clamp(560px, 70vw, 1000px); left: 10.5%; top: 9.1%; z-index: 1; }
+  .ticket-item.t4 { width: clamp(460px, 55vw, 840px); left: 2.4%; top: 23.2%; z-index: 3; }
+  .ticket-item.t5 { width: clamp(380px, 44vw, 680px); left: 56.8%; top: 25.4%; z-index: 6; }
+  .ticket-item.t6 { width: clamp(460px, 55vw, 840px); left: 58.3%; top: 35.0%; z-index: 2; }
+  .ticket-item.t7 { width: clamp(500px, 60vw, 900px); left: 6.8%; top: 42.4%; z-index: 4; }
+  .ticket-item.t8 { width: clamp(420px, 50vw, 760px); left: -5.7%; top: 38.8%; z-index: 1; }
+  .ticket-item.t9 { width: clamp(380px, 44vw, 680px); left: 50.5%; top: 39.0%; z-index: 3; }
+  .ticket-item.t10 { width: clamp(560px, 70vw, 1000px); left: 28.5%; top: 43.0%; z-index: 5; }
+  .ticket-item.t11 { width: clamp(480px, 56vw, 860px); left: 46.4%; top: -2.9%; z-index: 4; }
+  .ticket-item.t12 { width: clamp(440px, 52vw, 800px); left: -3.0%; top: 60.0%; z-index: 3; }
+
+  /* ============ TRANSITION SECTION ============ */
+  #transition-section {
+    height: 40vh;
+    position: relative;
+    background: var(--white);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 3vh;
+  }
+
+  .transition-text {
+    text-align: center;
+    padding: 2rem;
+    opacity: 0;
+  }
+
+  .transition-text p {
+    font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+    font-weight: 200;
+    color: var(--mid-gray);
+    line-height: 1.5;
+  }
+
+  .transition-text p span {
+    color: var(--text);
+    font-weight: 400;
+  }
+
+  /* ============ CONTENT SECTIONS ============ */
+  .section {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6rem 3rem;
+    background: var(--white);
+  }
+
+  .section-content {
+    max-width: 620px;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+  }
+
+  .section-heading {
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    font-weight: 200;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+    opacity: 0;
+  }
+
+  .section-body {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    font-weight: 300;
+    color: var(--text-light);
+    opacity: 0;
+  }
+
+  .section-body p + p { margin-top: 1.2rem; }
+
+  .highlight {
+    color: var(--text);
+    font-weight: 500;
+    border-bottom: 2px solid var(--gold);
+  }
+
+  /* ============ PLANE ZOOM SECTION ============ */
+  #plane-zoom-section {
+    position: relative;
+    height: 100vh;
+    background: var(--white);
+    overflow: visible;
+  }
+
+  .plane-zoom-img-wrapper {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 120px;
+    overflow: visible;
+  }
+
+  .plane-zoom-img-wrapper img {
+    max-width: 70%;
+    max-height: 70vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    will-change: transform;
+  }
+
+  /* ============ CHECKIN SECTION ============ */
+  #checkin-section {
+    min-height: 100vh;
+  }
+
+  /* ============ THE GATE SECTION ============ */
+  #gate-section {
+    min-height: 100vh;
+    padding: 4rem 3rem;
+  }
+
+  /* ============ HAMBURGER NAV ============ */
+  .hamburger-btn {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 200;
+    width: 44px;
+    height: 44px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--light-gray);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 0;
+    transition: all 0.3s ease;
+    opacity: 0;
+  }
+
+  .hamburger-btn:hover {
+    border-color: var(--gold);
+  }
+
+  .hamburger-btn span {
+    display: block;
+    width: 18px;
+    height: 1.5px;
+    background: var(--text);
+    transition: all 0.3s ease;
+    border-radius: 1px;
+  }
+
+  .hamburger-btn.open span:nth-child(1) {
+    transform: rotate(45deg) translate(4.5px, 4.5px);
+  }
+  .hamburger-btn.open span:nth-child(2) {
+    opacity: 0;
+  }
+  .hamburger-btn.open span:nth-child(3) {
+    transform: rotate(-45deg) translate(4.5px, -4.5px);
+  }
+
+  .nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 190;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+
+  .nav-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 480px;
+    width: 100%;
+    padding: 0 2rem;
+  }
+
+  .nav-menu a {
+    display: flex;
+    align-items: baseline;
+    gap: 1.25rem;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--light-gray);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .nav-menu a:first-child {
+    border-top: 1px solid var(--light-gray);
+  }
+
+  .nav-menu a:hover {
+    padding-left: 0.5rem;
+  }
+
+  .nav-menu a:hover .nav-code {
+    color: var(--gold);
+  }
+
+  .nav-code {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--mid-gray);
+    min-width: 3.5rem;
+    transition: color 0.3s ease;
+  }
+
+  .nav-title {
+    font-family: var(--font-primary);
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--text);
+    letter-spacing: 0.01em;
+  }
+
+  .nav-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--mid-gray);
+    margin-left: auto;
+  }
+
+  /* ============ LANDING ============ */
+  #landing-section {
+    min-height: 100vh;
+    text-align: center;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6rem 3rem;
+  }
+
+  #landing-section .section-content { max-width: 540px; }
+
+  .north-star {
+    font-size: clamp(1.4rem, 2.8vw, 2rem);
+    font-weight: 200;
+    line-height: 1.45;
+    font-style: italic;
+    color: var(--text);
+    opacity: 0;
+  }
+
+  .north-star-attr {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--mid-gray);
+    margin-top: 2rem;
+    opacity: 0;
+  }
+
+  /* ============ DEEP PAGES ============ */
+  .deep-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--white);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .deep-page.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .deep-page-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 6rem 3rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .deep-page-header {
+    margin-bottom: 3rem;
+    position: relative;
+  }
+
+  .deep-page-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1rem;
+  }
+
+  .deep-page-title {
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 200;
+    line-height: 1.25;
+    color: var(--text);
+  }
+
+  .deep-page-nav {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    display: flex;
+    gap: 1rem;
+    z-index: 101;
+  }
+
+  .deep-page-nav button {
+    background: var(--white);
+    border: 1px solid var(--light-gray);
+    padding: 0.5rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 3px;
+  }
+
+  .deep-page-nav button:hover {
+    background: var(--warm-cream);
+    border-color: var(--gold);
+  }
+
+  .deep-page-nav button.back {
+    position: fixed;
+    top: 2rem;
+    left: 2rem;
+    right: auto;
+  }
+
+  .deep-page-section {
+    margin-bottom: 3rem;
+  }
+
+  .deep-page-section h3 {
+    font-size: 1.3rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+
+  .deep-page-section p {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+  }
+
+  .deep-page-section p strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .card {
+    background: var(--warm-cream);
+    padding: 1.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--light-gray);
+  }
+
+  .card h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+
+  .card p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-light);
+  }
+
+  .principle-list {
+    list-style: none;
+    counter-reset: principle-counter;
+  }
+
+  .principle-list li {
+    counter-increment: principle-counter;
+    margin-bottom: 1.5rem;
+    padding-left: 2.5rem;
+    position: relative;
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: var(--text-light);
+  }
+
+  .principle-list li::before {
+    content: counter(principle-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--gold);
+  }
+
+  .quote-block {
+    background: var(--off-white);
+    border-left: 4px solid var(--gold);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: var(--text);
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+
+  /* ============ OVERLAY ============ */
+  .grain {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.02;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 900px) {
+    .section { padding: 3rem 2rem; }
+    .flip-board { padding: 1.5rem 1.25rem; }
+    .flip-char { width: 22px; height: 34px; font-size: 1rem; }
+    .flip-cell { gap: 2px; }
+    .flip-row { gap: 0.5rem; }
+    .board-columns { gap: 0.5rem; }
+  }
+
+  @media (max-width: 700px) {
+    .flip-board { padding: 1.25rem 1rem; width: 95vw; }
+    .flip-char { width: 18px; height: 28px; font-size: 0.8rem; }
+    .flip-cell { gap: 1.5px; }
+    .flip-cell:nth-child(3) { display: none; }
+    .board-columns span:nth-child(3) { display: none; }
+    .deep-page-nav { flex-direction: column; gap: 0.5rem; }
+    .hamburger-btn { top: 1.25rem; right: 1.25rem; }
+    .nav-subtitle { display: none; }
+  }
+
+  @media (max-width: 500px) {
+    .flip-char { width: 14px; height: 22px; font-size: 0.65rem; }
+    .flip-cell { gap: 1px; }
+    .flip-cell:nth-child(1) { display: none; }
+    .board-columns span:nth-child(1) { display: none; }
+    .card-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<!-- ======== HAMBURGER NAV ======== -->
+<button class="hamburger-btn" id="hamburger-btn" onclick="toggleNav()">
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+
+<div class="nav-overlay" id="nav-overlay">
+  <nav class="nav-menu">
+    <a onclick="goToPage('passenger'); toggleNav();">
+      <span class="nav-code">EM-01</span>
+      <span class="nav-title">The Passenger</span>
+      <span class="nav-subtitle">Identity</span>
+    </a>
+    <a onclick="goToPage('flight-school'); toggleNav();">
+      <span class="nav-code">EM-02</span>
+      <span class="nav-title">Flight School</span>
+      <span class="nav-subtitle">Learnings</span>
+    </a>
+    <a onclick="goToPage('flight-plan'); toggleNav();">
+      <span class="nav-code">EM-03</span>
+      <span class="nav-title">Flight Plan</span>
+      <span class="nav-subtitle">Manifesto</span>
+    </a>
+    <a onclick="goToPage('route-map'); toggleNav();">
+      <span class="nav-code">EM-04</span>
+      <span class="nav-title">Route Map</span>
+      <span class="nav-subtitle">Process</span>
+    </a>
+    <a onclick="goToPage('crew'); toggleNav();">
+      <span class="nav-code">EM-05</span>
+      <span class="nav-title">The Crew</span>
+      <span class="nav-subtitle">Culture</span>
+    </a>
+    <a onclick="goToPage('destination'); toggleNav();">
+      <span class="nav-code">EM-06</span>
+      <span class="nav-title">Destination</span>
+      <span class="nav-subtitle">Humanity</span>
+    </a>
+  </nav>
+</div>
+
+<div class="scroll-cue" id="scroll-cue">
+  <span>Scroll to start</span>
+  <div class="line"></div>
+</div>
+
+<div id="scroll-container">
+
+  <!-- ======== HERO: TERMINAL + FLIP BOARD ======== -->
+  <section id="hero">
+    <div class="terminal-header">
+      <span>Design Operating System</span>
+    </div>
+
+    <div class="flip-board" id="flip-board">
+      <div class="board-title-row">
+        <h2><span class="board-icon"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0011.5 2 1.5 1.5 0 0010 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></span>Departures</h2>
+        <div class="board-clock" id="board-clock">--:--</div>
+      </div>
+      <div class="board-columns">
+        <span>Flight</span>
+        <span>Destination</span>
+        <span>Gate</span>
+        <span>Remark</span>
+      </div>
+      <div id="board-rows"></div>
+    </div>
+
+    <div class="hero-tagline">
+      <h1>Craft in service of systems.<br>Systems in service of <em>humans.</em></h1>
+      <p>Emma Moystner — ArtCenter GIXD 2026</p>
+    </div>
+  </section>
+
+  <!-- ======== TRANSITION TEXT ======== -->
+  <section id="transition-section">
+    <div class="transition-text">
+      <p>The journey doesn't start at the gate.<br>It starts in the <span>system.</span></p>
+    </div>
+  </section>
+
+  <!-- ======== PEOPLE HORIZONTAL SCROLL ======== -->
+  <div id="people-scroll-wrapper">
+    <div id="people-scroll-section">
+      <div class="people-scroll-item">
+        <img src="photos/line/people%20suitcases/1man.png" alt="Person with suitcase">
+      </div>
+      <div class="people-scroll-item">
+        <img src="photos/line/people%20suitcases/2woman.png" alt="Person with suitcase">
+      </div>
+      <div class="people-scroll-item">
+        <img src="photos/line/people%20suitcases/3woman.png" alt="Person with suitcase">
+      </div>
+      <div class="people-scroll-item">
+        <img src="photos/line/people%20suitcases/4woman.png" alt="Person with suitcase">
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== 00 CHECK-IN ======== -->
+  <section class="section" id="checkin-section">
+    <div class="section-content">
+      <div class="section-label">00 — Check-in</div>
+      <h2 class="section-heading">Before the boarding pass</h2>
+      <div class="section-body">
+        <p>I didn't start in design. I started in the spaces between people and processes — coordinating the invisible logistics that keep complex systems running. Dispatch timelines. Crew scheduling. The operational reality that passengers never see but always feel.</p>
+        <p>That work taught me something designers rarely learn first: <span class="highlight">every elegant experience is downstream of an operational reality.</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== TICKET SCATTER (parallax depth) ======== -->
+  <div id="ticket-scatter">
+    <div class="ticket-item t1" data-speed="0.6" data-rotate="-8">
+      <img src="photos/tickets/ticket.png" alt="Boarding ticket">
+    </div>
+    <div class="ticket-item t2" data-speed="1.2" data-rotate="5">
+      <img src="photos/tickets/AAticket.png" alt="AA ticket">
+    </div>
+    <div class="ticket-item t3" data-speed="0.3" data-rotate="-3">
+      <img src="photos/tickets/DLticket.png" alt="Delta ticket">
+    </div>
+    <div class="ticket-item t4" data-speed="0.9" data-rotate="7">
+      <img src="photos/tickets/UAticket.png" alt="United ticket">
+    </div>
+    <div class="ticket-item t5" data-speed="1.5" data-rotate="-6">
+      <img src="photos/tickets/passport.png" alt="Passport">
+    </div>
+    <div class="ticket-item t6" data-speed="0.8" data-rotate="10">
+      <img src="photos/tickets/ticket.png" alt="Boarding ticket">
+    </div>
+    <div class="ticket-item t7" data-speed="1.4" data-rotate="-4">
+      <img src="photos/tickets/AAticket.png" alt="AA ticket">
+    </div>
+    <div class="ticket-item t8" data-speed="0.5" data-rotate="9">
+      <img src="photos/tickets/DLticket.png" alt="Delta ticket">
+    </div>
+    <div class="ticket-item t9" data-speed="1.1" data-rotate="-11">
+      <img src="photos/tickets/UAticket.png" alt="United ticket">
+    </div>
+    <div class="ticket-item t10" data-speed="0.4" data-rotate="6">
+      <img src="photos/tickets/passport.png" alt="Passport">
+    </div>
+    <div class="ticket-item t11" data-speed="1.0" data-rotate="-5">
+      <img src="photos/tickets/AAticketM.png" alt="AA ticket modified">
+    </div>
+    <div class="ticket-item t12" data-speed="0.7" data-rotate="8">
+      <img src="photos/tickets/DLticketM.png" alt="Delta ticket modified">
+    </div>
+  </div>
+
+  <!-- ======== 01 THE GATE ======== -->
+  <section class="section" id="gate-section">
+    <div class="section-content">
+      <div class="section-label">01 — The Gate</div>
+      <h2 class="section-heading">Reading the board</h2>
+      <div class="section-body">
+        <p>The old model of design leadership is stalled on the tarmac. Pixel pushing. Screen production. Managing designers instead of enabling them. The departures keep getting delayed — or cancelled altogether.</p>
+        <p>But look at the arrivals. Systems thinking. Ambient computing. Craft and systems as one discipline. A new generation of design leaders isn't waiting for clearance. They're already here.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== PLANE ZOOM-OUT ======== -->
+  <div id="plane-zoom-section">
+    <div class="plane-zoom-img-wrapper">
+      <img src="photos/bottom%20of%20plane/PBfarway.png" alt="Bottom of plane" id="plane-zoom-img">
+    </div>
+  </div>
+
+  <!-- ======== 02 TAKEOFF ======== -->
+  <section class="section" id="takeoff-section">
+    <div class="section-content">
+      <div class="section-label">02 — Takeoff</div>
+      <h2 class="section-heading">From coordination to creation</h2>
+      <div class="section-body">
+        <p>Now I design for the systems I used to navigate. The shift wasn't a departure from that earlier work — it was a climb to altitude, where the full topology of the problem finally becomes visible.</p>
+        <p>Operations gave me the ground truth. Design gave me the language. The combination is the thing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== 03 CRUISING ALTITUDE ======== -->
+  <section class="section" id="cruise-section">
+    <div class="section-content">
+      <div class="section-label">03 — Cruising Altitude</div>
+      <h2 class="section-heading">The view from thirty thousand feet</h2>
+      <div class="section-body">
+        <p>Design leadership isn't about managing designers. It's about seeing the system clearly enough to know where craft will have the most impact.</p>
+        <p>As AI commoditizes production, the designer's role shifts from maker to <span class="highlight">system-seer</span>: the person who understands not just what to build, but why, and how it fits into the larger architecture of human experience.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== 04 DESCENT ======== -->
+  <section class="section" id="descent-section">
+    <div class="section-content">
+      <div class="section-label">04 — Descent</div>
+      <h2 class="section-heading">Theory meets ground truth</h2>
+      <div class="section-body">
+        <p>Airlines in 2036. AI moving from assistive to agentic. Ambient computing replacing screens with spatial awareness. Biometric identity dissolving the friction between security and hospitality.</p>
+        <p>Five design briefs. Five futures where <span class="highlight">complex systems serve diverse humans</span> with more intelligence and more grace.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== 05 ARRIVAL ======== -->
+  <section class="section" id="landing-section">
+    <div class="section-content">
+      <div class="section-label" style="text-align:center">05 — Arrival</div>
+      <p class="north-star">"Design the systems people depend on with the craft those people deserve."</p>
+      <p class="north-star-attr">— My North Star</p>
+    </div>
+  </section>
+
+  <div style="height: 30vh;"></div>
+</div>
+
+<!-- ============ DEEP PAGES ============ -->
+
+<!-- EM-01: THE PASSENGER -->
+<div class="deep-page" id="page-passenger">
+  <div class="deep-page-nav">
+    <button class="back" onclick="closePage()">← Back</button>
+    <button onclick="goToPage('flight-school')">Next: Flight School →</button>
+  </div>
+  <div class="deep-page-content">
+    <div class="deep-page-header">
+      <div class="deep-page-label">EM-01 — The Passenger</div>
+      <h1 class="deep-page-title">Personal Style & Brand Identity</h1>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Professional Biography</h3>
+      <p>I'm an interaction designer who thinks in systems and advocates for people. I came to design from project coordination — managing timelines, aligning stakeholders, keeping complex work on track across teams that didn't always speak the same language. I was good at it. But I kept noticing the same thing: the systems I was coordinating were often failing the people they were supposed to serve.</p>
+      <p>Not because the teams were incompetent, but because nobody was looking at the experience from the human's perspective. Nobody was asking what it felt like to be the patient navigating a confusing discharge process, or the traveler standing in a terminal with no idea what was happening to their flight.</p>
+      <p>That's what brought me to interaction design. Not a love of pixels or interfaces, but a need to understand — and redesign — the systems that shape how people experience critical moments in their lives.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Strengths & Attributes</h3>
+      <div class="card-grid">
+        <div class="card">
+          <h4>Systems instinct</h4>
+          <p>The ability to see how pieces connect, where handoffs break, and who gets left behind.</p>
+        </div>
+        <div class="card">
+          <h4>Empathic pattern recognition</h4>
+          <p>An INFJ's wiring for reading beneath the surface. Less interested in what a screen looks like, more interested in what the person behind it is going through.</p>
+        </div>
+        <div class="card">
+          <h4>Operational fluency</h4>
+          <p>I've lived inside the systems I now design for. I know what dispatch timelines feel like, how crew scheduling breaks down.</p>
+        </div>
+        <div class="card">
+          <h4>Quiet conviction</h4>
+          <p>I lead through clarity and care, not volume.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Personality</h3>
+      <p><strong>INFJ</strong> — the pattern-seeker. Drawn to complexity, to meaning, to understanding what's really going on beneath the surface.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <div class="quote-block">I am an interaction designer who operates at the intersection of complex systems and human dignity.</div>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Practice Areas</h3>
+      <div class="card-grid">
+        <div class="card">
+          <h4>Aviation & Travel</h4>
+          <p>The full passenger journey from booking to baggage claim.</p>
+        </div>
+        <div class="card">
+          <h4>Healthcare & Life Sciences</h4>
+          <p>Clinical workflows, patient navigation, discharge processes.</p>
+        </div>
+        <div class="card">
+          <h4>Wellness & Wellbeing</h4>
+          <p>Behavioral design for sustained health outcomes.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EM-02: FLIGHT SCHOOL -->
+<div class="deep-page" id="page-flight-school">
+  <div class="deep-page-nav">
+    <button class="back" onclick="closePage()">← Back</button>
+    <button onclick="goToPage('flight-plan')">Next: Flight Plan →</button>
+  </div>
+  <div class="deep-page-content">
+    <div class="deep-page-header">
+      <div class="deep-page-label">EM-02 — Flight School</div>
+      <h1 class="deep-page-title">Leadership Learnings</h1>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Katie Dill</h3>
+      <p>Katie Dill's trajectory — from hands-on roles at Lyft and Airbnb to VP of Design at Stripe — tells a story the industry needs to hear. She didn't ascend to leadership by abandoning craft for strategy. She built her authority through craft.</p>
+      <p>Her deep understanding of design at the detail level gave her credibility to operate at the systems level — to shape how design functions across Stripe's entire product ecosystem, to partner meaningfully with engineering and product, and to make the case for design's business value in a language executives respond to.</p>
+      <p>She doesn't fight for a seat at the table. She earns it by making the work undeniable.</p>
+      <div class="quote-block">The most effective design leaders aren't choosing between craft and strategy. They're using deep craft knowledge as the lens through which they see strategic opportunities others miss.</div>
+      <p><strong>Key principle:</strong> Craft isn't the opposite of leadership. It's the prerequisite.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Duolingo</h3>
+      <p>Duolingo challenged my assumptions about what 'design-led' means. On the surface: a charming owl and satisfying animations. Underneath: one of the most sophisticated behavioral design systems in the world.</p>
+      <p>Every element — the streak mechanic, notification timing, social pressure features — is tested, measured, and iterated based on what actually changes behavior. The craft is exquisite, but it's craft in service of a system, not craft for its own sake.</p>
+      <p>The data is how they center the human — by measuring what actually helps people learn, not what designers assume will help.</p>
+      <p><strong>Key principle:</strong> Data-driven design and human-centered design aren't in tension. The data is the empathy at scale.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Synthesized Principles</h3>
+      <ol class="principle-list">
+        <li>Craft is the prerequisite for strategic credibility.</li>
+        <li>Systems visibility is the designer's most valuable skill.</li>
+        <li>Data and empathy are the same practice at different scales.</li>
+        <li>Influence comes from demonstrated value, not positional authority.</li>
+        <li>The best design decisions are invisible to the user and undeniable to the organization.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- EM-03: FLIGHT PLAN -->
+<div class="deep-page" id="page-flight-plan">
+  <div class="deep-page-nav">
+    <button class="back" onclick="closePage()">← Back</button>
+    <button onclick="goToPage('route-map')">Next: Route Map →</button>
+  </div>
+  <div class="deep-page-content">
+    <div class="deep-page-header">
+      <div class="deep-page-label">EM-03 — Flight Plan</div>
+      <h1 class="deep-page-title">Manifesto</h1>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>On Business</h3>
+      <p>Design's value isn't aesthetic. It's architectural. The companies that win treat design as a systems discipline — one that creates coherence across complex product ecosystems and translates human insight into business outcomes.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>On Design</h3>
+      <p>Design is not screen production. It's the practice of seeing entire systems through the lens of human experience and applying deep craft to the moments that matter most. The industry created a false binary between craft and strategy. The best designers refuse that binary.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>On Culture</h3>
+      <p>The best design happens in environments where rigor and psychological safety coexist. Where critique is about the work, not the person. Culture isn't the soft stuff — it's the operating system that determines whether talented people do their best work.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>On Leadership</h3>
+      <p>Design leadership is not a title. It's a practice. The designers who thrive in the next era won't be managing teams. They'll be embedded in the complexity of industries — understanding regulatory landscapes, operational constraints, and the lived experience of humans moving through the system.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>On Relationships</h3>
+      <p>Cross-functional partnership isn't about handoffs. It's about co-creation. The design leader's role isn't to protect design's territory. It's to be the person who keeps asking: what is the human experiencing right now?</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>On Responsibility</h3>
+      <p>When you're designing for someone who is sick, scared, exhausted, or stranded, you don't get to 'move fast and break things.' The stakes demand a different rigor — one that combines craft precision with deep empathy.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>On Impact</h3>
+      <p>Design leadership should be about service. Service to the humans in the system. Service to the truth of their experience. And service to the possibility that the system could be better — not just more efficient, not just more profitable, but more humane.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>On Our Future</h3>
+      <p>AI is commoditizing production. Ambient computing is dissolving screens. Biometric systems are rewriting identity. Every one of these shifts creates design problems that can't be solved at the screen level. They require designers who think in systems and have the courage to raise uncomfortable questions about power, consent, and inclusion.</p>
+    </div>
+  </div>
+</div>
+
+<!-- EM-04: ROUTE MAP -->
+<div class="deep-page" id="page-route-map">
+  <div class="deep-page-nav">
+    <button class="back" onclick="closePage()">← Back</button>
+    <button onclick="goToPage('crew')">Next: The Crew →</button>
+  </div>
+  <div class="deep-page-content">
+    <div class="deep-page-header">
+      <div class="deep-page-label">EM-04 — Route Map</div>
+      <h1 class="deep-page-title">Process & Practice</h1>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>My 5-Step Process</h3>
+      <ol class="principle-list">
+        <li><strong>Read the System</strong> — Before designing anything, understand the operational reality. Map the stakeholders, constraints, handoffs, failure points.</li>
+        <li><strong>Find the Seams</strong> — The highest-impact design opportunities live at the seams — where systems hand off, where departments don't talk, where digital and physical diverge.</li>
+        <li><strong>Frame the Problem</strong> — Translate systemic insight into a designable problem. Ambitious enough to matter, scoped enough to execute.</li>
+        <li><strong>Design with Data and Craft</strong> — Build, test, measure. Use behavioral data to validate. Use craft to make the interaction feel worthy of the moment.</li>
+        <li><strong>Zoom Out, Then Zoom In</strong> — Does this intervention create coherence across the broader experience? Then zoom back in and make sure the craft holds.</li>
+      </ol>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>AI in My Workflow</h3>
+      <p>AI is a production accelerator, not a thinking replacement. I use AI tools for rapid prototyping, copy iteration, layout exploration, and data analysis. The human work — framing problems, reading systems, making judgment calls about human experience — stays human.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Cross-Functional Collaboration</h3>
+      <p>I don't design in isolation and deliver specs. I embed in the complexity of the problem alongside engineering, product, data, and operations.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Industry Domains</h3>
+      <div class="card-grid">
+        <div class="card">
+          <h4>Primary</h4>
+          <p>Aviation & Travel</p>
+        </div>
+        <div class="card">
+          <h4>Secondary</h4>
+          <p>Healthcare & Life Sciences</p>
+        </div>
+        <div class="card">
+          <h4>Tertiary</h4>
+          <p>Wellness & Wellbeing</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EM-05: THE CREW -->
+<div class="deep-page" id="page-crew">
+  <div class="deep-page-nav">
+    <button class="back" onclick="closePage()">← Back</button>
+    <button onclick="goToPage('destination')">Next: Destination →</button>
+  </div>
+  <div class="deep-page-content">
+    <div class="deep-page-header">
+      <div class="deep-page-label">EM-05 — The Crew</div>
+      <h1 class="deep-page-title">Culture & Collaboration</h1>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Structuring Design for Humans and Machines</h3>
+      <p>The IC design leader — someone with deep craft expertise and systems vision who influences through quality, not headcount — becomes a critical role. The future team is designers and engineers co-creating inside the same system, with AI accelerating production while humans focus on judgment.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Attracting Talented Teams</h3>
+      <p>Talented designers want meaningful problems with people who take craft seriously. Show people they'll work on problems that matter and they'll show up.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Cross-Functional Collaboration</h3>
+      <p>Katie Dill's approach at Stripe: design runs as a function that creates coherence — built on shared outcomes, not turf wars.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Running Critiques</h3>
+      <p>The question isn't 'does this look good?' It's 'does this serve the human in the system we're designing for?'</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Thriving Environments</h3>
+      <p>A thriving design environment is one where rigor and care coexist. The standard is high but the tone is human.</p>
+    </div>
+  </div>
+</div>
+
+<!-- EM-06: DESTINATION -->
+<div class="deep-page" id="page-destination">
+  <div class="deep-page-nav">
+    <button class="back" onclick="closePage()">← Back</button>
+    <button onclick="goToPage('passenger')">Return to Beginning →</button>
+  </div>
+  <div class="deep-page-content">
+    <div class="deep-page-header">
+      <div class="deep-page-label">EM-06 — Destination</div>
+      <h1 class="deep-page-title">Contribution to Humanity</h1>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Why This Work Matters</h3>
+      <p>The systems I want to design for aren't consumer products optimizing for engagement. They're infrastructure for human life at its most consequential. When someone is stranded in an airport at 2 AM with no information... the design of those systems isn't a UX problem. It's a dignity problem.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Ethical Responsibility</h3>
+      <p>Emerging technologies create design problems that require designers who ask uncomfortable questions. Who gets to put information in your field of vision? Who is excluded when biometrics become the default? The ethical responsibility isn't to slow progress. It's to ensure progress serves everyone.</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Long-Term Vision</h3>
+      <p>I'm building toward becoming a design leader who works at the intersection of complex systems and human dignity. I'm not there yet. I'm a career changer with a coordination background and an INFJ's need to understand the patterns beneath the surface. But the combination of systems thinking, craft development, and genuine care is what will close the gap.</p>
+    </div>
+
+    <div class="deep-page-section" style="text-align: center; margin: 3rem 0;">
+      <p class="north-star" style="opacity: 1;">"Design the systems people depend on with the craft those people deserve."</p>
+    </div>
+
+    <div class="deep-page-section">
+      <h3>Closing Thoughts</h3>
+      <p>What I'm building toward isn't just a career. It's a practice: craft in service of systems, systems in service of humans. That's the operating system I intend to run on.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================
+// SPLIT-FLAP DEPARTURE BOARD
+// ============================================
+const CHARS = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-:.';
+
+// Phase 1: The old paradigm
+const OLD_ROWS = [
+  { code: 'DL-01', dest: 'PIXEL PUSHING',          gate: '--',  status: 'DELAYED'  },
+  { code: 'DL-02', dest: 'MANAGING DESIGNERS',      gate: '--',  status: 'DELAYED'  },
+  { code: 'DL-03', dest: 'SCREEN PRODUCTION',       gate: '--',  status: 'DELAYED'  },
+  { code: 'DL-04', dest: 'SILOED CRAFT',            gate: '--',  status: 'DELAYED'  },
+  { code: 'DL-05', dest: 'WAITING FOR SPECS',       gate: '--',  status: 'CANCLD'  },
+];
+
+// Phase 2: The new paradigm (flips into these)
+const NEW_ROWS = [
+  { code: 'EM-01', dest: 'SYSTEMS THINKING',     gate: 'A1',  status: 'BOARDING' },
+  { code: 'EM-02', dest: 'ENABLING CRAFT',       gate: 'A3',  status: 'ON TIME'  },
+  { code: 'EM-03', dest: 'AMBIENT COMPUTING',    gate: 'B2',  status: 'ON TIME'  },
+  { code: 'EM-04', dest: 'CRAFT X SYSTEMS',      gate: 'B5',  status: 'BOARDING' },
+  { code: 'EM-05', dest: 'DESIGNING FUTURES',    gate: 'C1',  status: 'ON TIME'  },
+];
+
+const FIELD_WIDTHS = { code: 5, dest: 18, gate: 3, status: 8 };
+const FIELD_STYLES = { code: 'gold-char', dest: 'white-char', gate: 'white-char', status: 'status-char' };
+
+function padStr(str, len) {
+  return (str + ' '.repeat(len)).slice(0, len);
+}
+
+function createFlipCell(width, styleClass, align) {
+  const cell = document.createElement('div');
+  cell.className = 'flip-cell' + (align === 'right' ? ' right' : '');
+  for (let i = 0; i < width; i++) {
+    const ch = document.createElement('div');
+    ch.className = 'flip-char' + (styleClass ? ' ' + styleClass : '');
+    ch.textContent = ' ';
+    cell.appendChild(ch);
+  }
+  return cell;
+}
+
+function buildBoard() {
+  const container = document.getElementById('board-rows');
+  OLD_ROWS.forEach(() => {
+    const row = document.createElement('div');
+    row.className = 'flip-row';
+    const fields = ['code', 'dest', 'gate', 'status'];
+    fields.forEach((field) => {
+      const cell = createFlipCell(FIELD_WIDTHS[field], FIELD_STYLES[field], 'left');
+      if (field === 'status') {
+        cell.querySelectorAll('.flip-char').forEach(ch => ch.classList.add('negative'));
+      }
+      row.appendChild(cell);
+    });
+    container.appendChild(row);
+  });
+}
+
+// Nav overlay toggle
+function toggleNav() {
+  const btn = document.getElementById('hamburger-btn');
+  const overlay = document.getElementById('nav-overlay');
+  btn.classList.toggle('open');
+  overlay.classList.toggle('open');
+}
+
+function flipTo(targetData, boardId, staggerBase, stepInterval, onComplete) {
+  const board = document.getElementById(boardId);
+  const rows = board.querySelectorAll('.flip-row');
+  const fields = ['code', 'dest', 'gate', 'status'];
+  let completedCount = 0;
+  const totalChars = rows.length * fields.length * 18; // rough estimate
+
+  rows.forEach((row, rowIdx) => {
+    const flight = targetData[rowIdx];
+    const cells = row.querySelectorAll('.flip-cell');
+
+    cells.forEach((cell, fi) => {
+      const target = padStr(flight[fields[fi]], FIELD_WIDTHS[fields[fi]]);
+      const chars = cell.querySelectorAll('.flip-char');
+
+      chars.forEach((ch, ci) => {
+        const targetChar = target[ci] || ' ';
+        const currentChar = ch.textContent;
+
+        if (currentChar === targetChar) return;
+
+        const totalSteps = 4 + Math.floor(Math.random() * 12);
+        const baseDelay = rowIdx * staggerBase + ci * 30 + fi * 50;
+
+        setTimeout(() => {
+          let s = 0;
+          const int = setInterval(() => {
+            if (s >= totalSteps) {
+              ch.textContent = targetChar;
+              ch.classList.remove('flipping');
+              clearInterval(int);
+              completedCount++;
+              if (onComplete && completedCount === totalChars) {
+                onComplete();
+              }
+              return;
+            }
+            ch.textContent = CHARS[Math.floor(Math.random() * CHARS.length)];
+            ch.classList.add('flipping');
+            setTimeout(() => ch.classList.remove('flipping'), 30);
+            s++;
+          }, stepInterval);
+        }, baseDelay);
+      });
+    });
+  });
+}
+
+function animateBoard() {
+  flipTo(OLD_ROWS, 'flip-board', 250, 45);
+
+  const phase2Delay = 5000;
+  setTimeout(() => {
+    flipHeroBoardToArrivals();
+  }, phase2Delay);
+}
+
+// Hero board flip to new paradigm (phase 2)
+function flipHeroBoardToArrivals() {
+  document.querySelectorAll('#flip-board .flip-char.negative').forEach(ch => ch.classList.remove('negative'));
+  const titleEl = document.querySelector('#flip-board .board-title-row h2');
+  if (titleEl) {
+    titleEl.innerHTML = '<span class="board-icon"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0011.5 2 1.5 1.5 0 0010 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></span>Arrivals';
+  }
+  flipTo(NEW_ROWS, 'flip-board', 200, 40);
+}
+
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('board-clock').textContent = h + ':' + m;
+}
+
+buildBoard();
+
+// ============================================
+// DEEP PAGE NAVIGATION
+// ============================================
+function goToPage(pageId) {
+  // Hide all pages
+  document.querySelectorAll('.deep-page').forEach(page => {
+    page.classList.remove('active');
+  });
+  // Show selected page
+  const page = document.getElementById(`page-${pageId}`);
+  if (page) {
+    page.classList.add('active');
+    page.scrollTop = 0;
+  }
+}
+
+function closePage() {
+  document.querySelectorAll('.deep-page').forEach(page => {
+    page.classList.remove('active');
+  });
+  // Close nav if open
+  document.getElementById('hamburger-btn').classList.remove('open');
+  document.getElementById('nav-overlay').classList.remove('open');
+}
+
+// ============================================
+// SCROLL ANIMATIONS
+// ============================================
+function initScrollAnimations() {
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Hero entrance
+  const heroTL = gsap.timeline({ delay: 0.3 });
+  heroTL
+    .to('.terminal-header', { opacity: 1, duration: 0.6, ease: 'power2.out' })
+    .to('.flip-board', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.3')
+    .add(() => { animateBoard(); updateClock(); setInterval(updateClock, 30000); }, '-=0.4')
+    .to('.hero-tagline', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '+=1.5')
+    .to('#scroll-cue', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.3');
+
+  // Scroll cue fade
+  gsap.to('#scroll-cue', {
+    opacity: 0,
+    scrollTrigger: { trigger: '#hero', start: 'top top', end: '+=150', scrub: true }
+  });
+
+  // Check-in section — set visible immediately, animate on scroll with refreshPriority
+  const checkinSection = document.querySelector('#checkin-section');
+  if (checkinSection) {
+    // Force these elements visible after horizontal scroll completes
+    const checkinLabel = checkinSection.querySelector('.section-label');
+    const checkinHeading = checkinSection.querySelector('.section-heading');
+    const checkinBody = checkinSection.querySelector('.section-body');
+
+    ScrollTrigger.create({
+      trigger: checkinSection,
+      start: 'top 95%',
+      onEnter: () => {
+        gsap.to(checkinLabel, { opacity: 1, duration: 0.6, ease: 'power2.out' });
+        gsap.to(checkinHeading, { opacity: 1, duration: 0.6, ease: 'power2.out', delay: 0.15 });
+        gsap.to(checkinBody, { opacity: 1, duration: 0.6, ease: 'power2.out', delay: 0.3 });
+      },
+      onEnterBack: () => {
+        gsap.to(checkinLabel, { opacity: 1, duration: 0.3 });
+        gsap.to(checkinHeading, { opacity: 1, duration: 0.3 });
+        gsap.to(checkinBody, { opacity: 1, duration: 0.3 });
+      },
+      refreshPriority: -1,
+      invalidateOnRefresh: true
+    });
+  }
+
+  // Transition text
+  gsap.to('.transition-text', {
+    opacity: 1,
+    scrollTrigger: { trigger: '#transition-section', start: 'top 70%', end: 'top 40%', scrub: 1 }
+  });
+
+  // People horizontal scroll
+  const peopleScrollSection = document.querySelector('#people-scroll-section');
+  const peopleWrapper = document.querySelector('#people-scroll-wrapper');
+  if (peopleScrollSection && peopleWrapper) {
+    function setupHorizontalScroll() {
+      // Kill any existing ScrollTriggers on this element
+      ScrollTrigger.getAll().forEach(st => {
+        if (st.trigger === peopleWrapper) st.kill();
+      });
+
+      const totalWidth = peopleScrollSection.scrollWidth;
+      const viewportWidth = window.innerWidth;
+      const scrollAmount = totalWidth - viewportWidth;
+
+      if (scrollAmount <= 0) return;
+
+      gsap.to(peopleScrollSection, {
+        x: -scrollAmount,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: peopleWrapper,
+          start: 'top top',
+          end: '+=' + scrollAmount,
+          pin: true,
+          scrub: 0.5,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          onEnter: () => peopleScrollSection.classList.add('is-pinned'),
+          onLeave: () => peopleScrollSection.classList.remove('is-pinned'),
+          onEnterBack: () => peopleScrollSection.classList.add('is-pinned'),
+          onLeaveBack: () => peopleScrollSection.classList.remove('is-pinned')
+        }
+      });
+    }
+
+    // Wait for images, then init
+    const imgs = peopleScrollSection.querySelectorAll('img');
+    let loaded = 0;
+    const total = imgs.length;
+    let initialized = false;
+
+    function tryInit() {
+      if (initialized) return;
+      initialized = true;
+      // Double rAF to ensure layout
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        setupHorizontalScroll();
+        ScrollTrigger.refresh();
+      }));
+    }
+
+    imgs.forEach(img => {
+      const check = () => { loaded++; if (loaded >= total) tryInit(); };
+      if (img.complete && img.naturalHeight > 0) check();
+      else { img.onload = check; img.onerror = check; }
+    });
+
+    // Safety fallback
+    window.addEventListener('load', () => { if (!initialized) tryInit(); });
+  }
+
+  // Ticket parallax
+  const ticketItems = document.querySelectorAll('.ticket-item');
+  ticketItems.forEach(item => {
+    const speed = parseFloat(item.dataset.speed) || 1;
+    const rotate = parseFloat(item.dataset.rotate) || 0;
+
+    gsap.set(item, { rotation: rotate });
+
+    gsap.to(item, {
+      y: () => -speed * window.innerHeight * 1.2,
+      rotation: rotate + (speed > 1 ? 4 : -3),
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '#ticket-scatter',
+        start: 'top bottom',
+        end: 'bottom top',
+        scrub: true
+      }
+    });
+  });
+
+  // Hamburger button fade in after hero
+  gsap.to('#hamburger-btn', {
+    opacity: 1,
+    duration: 0.6,
+    delay: 3,
+    ease: 'power2.out'
+  });
+
+  // Gate section text animations
+  const gateSection = document.querySelector('#gate-section');
+  if (gateSection) {
+    gsap.to(gateSection.querySelector('.section-label'), {
+      opacity: 1, scrollTrigger: { trigger: gateSection, start: 'top 60%', end: 'top 40%', scrub: 1 }
+    });
+    gsap.to(gateSection.querySelector('.section-heading'), {
+      opacity: 1, scrollTrigger: { trigger: gateSection, start: 'top 55%', end: 'top 35%', scrub: 1 }
+    });
+    gsap.to(gateSection.querySelector('.section-body'), {
+      opacity: 1, scrollTrigger: { trigger: gateSection, start: 'top 48%', end: 'top 28%', scrub: 1 }
+    });
+  }
+
+  // Plane zoom-out between Gate and Takeoff — pinned with hold then zoom
+  const planeZoomSection = document.querySelector('#plane-zoom-section');
+  if (planeZoomSection) {
+    const planeImg = planeZoomSection.querySelector('#plane-zoom-img');
+    gsap.set(planeImg, { scale: 2.2 });
+
+    const planeTL = gsap.timeline({
+      scrollTrigger: {
+        trigger: planeZoomSection,
+        start: 'top 10%',
+        end: '+=2500',
+        pin: true,
+        pinSpacing: true,
+        scrub: 0.3,
+      }
+    });
+
+    planeTL
+      .to(planeImg, { scale: 1, duration: 1, ease: 'power1.out' });  // zoom out immediately
+  }
+
+  // Takeoff, Cruise, Descent sections
+  ['#takeoff-section', '#cruise-section', '#descent-section'].forEach(sel => {
+    const s = document.querySelector(sel);
+    if (s) {
+      gsap.to(s.querySelector('.section-label'), {
+        opacity: 1, scrollTrigger: { trigger: s, start: 'top 60%', end: 'top 40%', scrub: 1 }
+      });
+      gsap.to(s.querySelector('.section-heading'), {
+        opacity: 1, scrollTrigger: { trigger: s, start: 'top 55%', end: 'top 35%', scrub: 1 }
+      });
+      gsap.to(s.querySelector('.section-body'), {
+        opacity: 1, scrollTrigger: { trigger: s, start: 'top 48%', end: 'top 28%', scrub: 1 }
+      });
+    }
+  });
+
+  // Landing section
+  const landingSection = document.querySelector('#landing-section');
+  if (landingSection) {
+    const label = landingSection.querySelector('.section-label');
+    if (label) {
+      gsap.to(label, {
+        opacity: 1, scrollTrigger: { trigger: landingSection, start: 'top 60%', end: 'top 40%', scrub: 1 }
+      });
+    }
+    gsap.to(landingSection.querySelector('.north-star'), {
+      opacity: 1, scrollTrigger: { trigger: landingSection, start: 'top 55%', end: 'top 35%', scrub: 1 }
+    });
+    gsap.to(landingSection.querySelector('.north-star-attr'), {
+      opacity: 1, scrollTrigger: { trigger: landingSection, start: 'top 45%', end: 'top 30%', scrub: 1 }
+    });
+  }
+}
+
+// ============================================
+// INIT
+// ============================================
+initScrollAnimations();
+</script>
+</body>
+</html>
