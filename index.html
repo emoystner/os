@@ -516,6 +516,80 @@
     will-change: transform;
   }
 
+  /* ============ PLANE WINDOW PARALLAX ============ */
+  #window-parallax-section {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--white);
+  }
+
+  .window-parallax-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Cloud layers — positioned behind the window openings */
+  .cloud-layer {
+    position: absolute;
+    left: 0;
+    top: 8%;
+    height: 82%;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    will-change: transform;
+  }
+
+  .cloud-layer .cloud-img {
+    height: 100%;
+    width: auto;
+    object-fit: cover;
+    display: block;
+    flex-shrink: 0;
+    min-width: 100vw;
+  }
+
+  .cloud-img-flipped {
+    transform: scaleX(-1);
+  }
+
+  .cloud-layer-far {
+    z-index: 1;
+    opacity: 0.45;
+    filter: blur(2px) brightness(1.08);
+    top: 5%;
+    height: 90%;
+  }
+
+  .cloud-layer-mid {
+    z-index: 2;
+    opacity: 0.7;
+    filter: blur(0.5px);
+  }
+
+  .cloud-layer-near {
+    z-index: 3;
+    opacity: 1;
+  }
+
+  /* Plane window PNG overlay — white wall baked into the image, transparent where windows are */
+  .window-frame-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .window-frame-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
   /* ============ CHECKIN SECTION ============ */
   #checkin-section {
     min-height: 100vh;
@@ -1084,6 +1158,26 @@
       </div>
     </div>
   </section>
+
+  <!-- ======== PLANE WINDOW PARALLAX ======== -->
+  <div id="window-parallax-section">
+    <div class="window-parallax-inner">
+      <!-- Cloud layers at different depths -->
+      <div class="cloud-layer cloud-layer-far">
+        <img src="photos/clouds.png" alt="" class="cloud-img"><img src="photos/clouds.png" alt="" class="cloud-img cloud-img-flipped">
+      </div>
+      <div class="cloud-layer cloud-layer-mid">
+        <img src="photos/clouds.png" alt="" class="cloud-img"><img src="photos/clouds.png" alt="" class="cloud-img cloud-img-flipped">
+      </div>
+      <div class="cloud-layer cloud-layer-near">
+        <img src="photos/clouds.png" alt="" class="cloud-img"><img src="photos/clouds.png" alt="" class="cloud-img cloud-img-flipped">
+      </div>
+      <!-- Plane window frame (transparent where the windows are) -->
+      <div class="window-frame-overlay">
+        <img src="photos/planewindows.png" alt="Plane window" class="window-frame-img">
+      </div>
+    </div>
+  </div>
 
   <!-- ======== 03 CRUISING ALTITUDE ======== -->
   <section class="section" id="cruise-section">
@@ -1764,6 +1858,32 @@ function initScrollAnimations() {
 
     planeTL
       .to(planeImg, { scale: 1, duration: 1, ease: 'power1.out' });  // zoom out immediately
+  }
+
+  // Plane window parallax — clouds scroll at different speeds for depth
+  const windowSection = document.querySelector('#window-parallax-section');
+  if (windowSection) {
+    const cloudFar  = windowSection.querySelector('.cloud-layer-far');
+    const cloudMid  = windowSection.querySelector('.cloud-layer-mid');
+    const cloudNear = windowSection.querySelector('.cloud-layer-near');
+
+    const windowTL = gsap.timeline({
+      scrollTrigger: {
+        trigger: windowSection,
+        start: 'top top',
+        end: '+=3000',
+        pin: true,
+        pinSpacing: true,
+        scrub: 0.5,
+      }
+    });
+
+    // Each layer scrolls left at different speeds — far = slow, near = fast
+    // With 2 images (original + mirrored), max safe travel is ~50%
+    windowTL
+      .to(cloudFar,  { x: '-15%', duration: 1, ease: 'none' }, 0)
+      .to(cloudMid,  { x: '-28%', duration: 1, ease: 'none' }, 0)
+      .to(cloudNear, { x: '-42%', duration: 1, ease: 'none' }, 0);
   }
 
   // Takeoff, Cruise, Descent sections
