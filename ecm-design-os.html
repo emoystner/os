@@ -1,0 +1,2280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emma Moystner — Design Operating System</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
+<!-- GSAP + ScrollTrigger + Lenis -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+
+<style>
+/* ═══════════════════════════════════════════
+   RESET & VARIABLES
+   ═══════════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  /* New palette from color swatches */
+  --peach: #FFD5BB;
+  --pink: #FFBAEC;
+  --orange: #E15304;
+  --lavender: #9DA5C5;
+  --burgundy: #410016;
+  --olive: #775D0F;
+
+  /* Derived tones */
+  --bg-cream: #FAF8F5;
+  --bg-warm: #FFF5EE;
+  --text-dark: #2C2B28;
+  --text-light: #6B6862;
+  --text-muted: #A8A49C;
+  --white: #FFFFFF;
+
+  /* Fonts */
+  --font-primary: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-serif: 'DM Serif Display', serif;
+}
+
+html {
+  background: var(--white);
+  color: var(--text-dark);
+  font-family: var(--font-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.lenis, html.lenis body { height: auto; }
+body { overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* ═══════════════════════════════════════════
+   NAVIGATION — sticky, frosted
+   ═══════════════════════════════════════════ */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 24px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.5s ease, padding 0.4s ease, border-color 0.5s ease;
+  border-bottom: 1px solid transparent;
+}
+
+.nav.scrolled {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 16px 48px;
+  border-bottom-color: rgba(0,0,0,0.06);
+}
+
+.nav-logo {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-dark);
+  transition: color 0.5s;
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: color 0.3s, opacity 0.3s;
+}
+
+.nav-links a:hover { opacity: 1; color: var(--text-dark); }
+
+.nav-cta {
+  background: var(--orange);
+  color: var(--white);
+  padding: 10px 24px;
+  border-radius: 50px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 1;
+  pointer-events: auto;
+  transition: background 0.3s;
+}
+
+.nav-cta:hover { background: #c94800; }
+
+/* ═══════════════════════════════════════════
+   HERO — FLIP BOARD
+   ═══════════════════════════════════════════ */
+#hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-cream);
+  position: relative;
+  padding: 2rem;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 3rem;
+  opacity: 0;
+}
+
+.terminal-header span {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Split-flap board */
+.flip-board {
+  background: #111113;
+  border-radius: 8px;
+  padding: 2.5rem 3rem;
+  width: 95vw;
+  max-width: 1290px;
+  overflow: hidden;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.04) inset,
+    0 40px 100px rgba(0,0,0,0.25),
+    0 8px 20px rgba(0,0,0,0.12);
+  opacity: 0;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+.board-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.board-title-row h2 {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.board-title-row h2 .board-icon {
+  display: inline-flex;
+  width: 18px; height: 18px;
+}
+
+.board-title-row h2 .board-icon svg {
+  width: 100%; height: 100%;
+  fill: #FFFFFF;
+}
+
+.board-clock {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.05em;
+}
+
+.board-columns {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+  padding: 0 2px;
+}
+
+.board-columns span {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+
+.flip-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 0.75rem;
+  margin-bottom: 6px;
+  padding: 2px;
+}
+
+.flip-cell {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.flip-char {
+  width: 27px; height: 42px;
+  background: linear-gradient(to bottom,
+    #2C2C30 0%, #2C2C30 48%,
+    #1A1A1E 48%, #1A1A1E 52%,
+    #262629 52%, #262629 100%);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #FFFFFF;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.5),
+    0 0 0 0.5px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.flip-char::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%; height: 2px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.6) 100%);
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.flip-char::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 49%; height: 4px;
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.15) 60%, transparent);
+  z-index: 1;
+}
+
+.flip-char.gold-char { color: var(--orange); }
+.flip-char.white-char { color: #FFFFFF; }
+.flip-char.status-char { color: #6ECF6E; }
+.flip-char.status-char.negative { color: #E85A5A; }
+
+.flip-char.flipping {
+  animation: flipIn 0.06s ease-out;
+}
+
+@keyframes flipIn {
+  0% {
+    transform: perspective(200px) rotateX(-50deg);
+    background: linear-gradient(to bottom, #35353A 0%, #35353A 48%, #1A1A1E 48%, #1A1A1E 52%, #2E2E32 52%, #2E2E32 100%);
+  }
+  100% { transform: perspective(200px) rotateX(0deg); }
+}
+
+.hero-tagline {
+  margin-top: 3rem;
+  padding-bottom: 4rem;
+  text-align: center;
+  opacity: 0;
+}
+
+.hero-tagline h1 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 200;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--text-dark);
+}
+
+.hero-tagline h1 em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.hero-tagline p {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  margin-top: 1rem;
+}
+
+/* ═══════════════════════════════════════════
+   CONTENT SECTIONS — manifesto, process, etc.
+   ═══════════════════════════════════════════ */
+.section {
+  position: relative;
+  padding: 160px 48px;
+}
+
+.section-inner {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 1.5rem;
+}
+
+.section-heading {
+  font-family: var(--font-primary);
+  font-size: 42px;
+  font-weight: 300;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+  color: var(--text-dark);
+}
+
+.section-body {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  font-weight: 300;
+  color: var(--text-light);
+}
+
+.section-body p + p { margin-top: 1.2rem; }
+
+.highlight {
+  color: var(--text-dark);
+  font-weight: 500;
+  border-bottom: 2px solid var(--orange);
+}
+
+/* Reveal animation wrappers */
+.reveal-up {
+  opacity: 0;
+  transform: translateY(40px);
+}
+
+/* ═══════════════════════════════════════════
+   PROCESS — accordion fold
+   ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   LEADERSHIP LEARNINGS — cursor-following hover images
+   ═══════════════════════════════════════════ */
+.leaders-section {
+  padding: 160px 48px;
+  background: var(--bg-cream);
+  position: relative;
+  cursor: default;
+}
+
+.leaders-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.leaders-header {
+  margin-bottom: 96px;
+}
+
+.leaders-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+}
+
+.leader-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.leader-trigger {
+  display: inline-block;
+  font-family: var(--font-primary);
+  font-size: clamp(32px, 4vw, 56px);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--text-dark);
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(44,43,40,0.2);
+  width: fit-content;
+  position: relative;
+  z-index: 10;
+}
+
+.leader-synthesis,
+.leader-tag,
+.leaders-header {
+  position: relative;
+  z-index: 10;
+}
+
+.leader-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: -16px;
+}
+
+.leader-synthesis {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-light);
+  font-weight: 300;
+  max-width: 440px;
+}
+
+.leader-synthesis .highlight {
+  color: var(--text-dark);
+  font-weight: 500;
+  border-bottom: 2px solid var(--orange);
+}
+
+/* Cursor-following photo, cycles through images as you move */
+.leader-card {
+  position: relative;
+}
+
+.leader-card.hover-area {
+  cursor: none;
+}
+
+.photo-follower {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 220px;
+  height: 220px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  will-change: transform, opacity;
+  transition: opacity 0.2s ease;
+}
+
+.photo-follower.visible {
+  opacity: 1;
+}
+
+.photo-follower img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.photo-follower img.active {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .leaders-section { padding: 100px 24px; }
+  .leaders-grid { grid-template-columns: 1fr; gap: 64px; }
+  .leader-trigger { cursor: pointer; }
+  .photo-pop { display: none; }
+}
+
+/* ═══════════════════════════════════════════
+   WHY IT MATTERS — Flair "Our Offer" style
+   ═══════════════════════════════════════════ */
+.why-section {
+  background: var(--bg-cream);
+  padding: 160px 48px 160px 232px;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.8s ease;
+}
+
+.why-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.why-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 80px;
+  gap: 32px;
+}
+
+.why-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 16px;
+  transition: color 0.6s ease;
+}
+
+.why-section.active .why-label {
+  color: rgba(255,255,255,0.6);
+}
+
+.why-heading {
+  font-family: var(--font-primary);
+  font-size: clamp(36px, 5vw, 64px);
+  line-height: 1.1;
+  color: var(--text-dark);
+  font-weight: 300;
+  max-width: 600px;
+  transition: color 0.6s ease;
+}
+
+.why-section.active .why-heading {
+  color: #fff;
+}
+
+.why-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.why-item {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr;
+  gap: 24px;
+  padding: 40px 0;
+  border-top: 1px solid rgba(44,43,40,0.1);
+  opacity: 0;
+  transform: translateY(40px);
+  transition: border-color 0.6s ease;
+}
+
+.why-section.active .why-item {
+  border-top-color: rgba(255,255,255,0.2);
+}
+
+.why-item:last-child {
+  border-bottom: 1px solid rgba(44,43,40,0.1);
+  transition: border-color 0.6s ease;
+}
+
+.why-section.active .why-item:last-child {
+  border-bottom-color: rgba(255,255,255,0.2);
+}
+
+.why-item-num {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  padding-top: 6px;
+  transition: color 0.6s ease;
+}
+
+.why-section.active .why-item-num {
+  color: rgba(255,255,255,0.5);
+}
+
+.why-item-title {
+  font-family: var(--font-primary);
+  font-size: clamp(24px, 3vw, 36px);
+  line-height: 1.2;
+  color: var(--text-dark);
+  font-weight: 300;
+  transition: color 0.6s ease;
+}
+
+.why-section.active .why-item-title {
+  color: #fff;
+}
+
+.why-item-desc {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-light);
+  font-weight: 300;
+  max-width: 400px;
+  transition: color 0.6s ease;
+}
+
+.why-section.active .why-item-desc {
+  color: rgba(255,255,255,0.7);
+}
+
+/* ═══════════════════════════════════════════
+   PROCESS & PRACTICE (accordion)
+   ═══════════════════════════════════════════ */
+.process-section {
+  padding: 160px 48px;
+  background: var(--bg-cream);
+}
+
+.process-header {
+  max-width: 800px;
+  margin: 0 auto 64px;
+}
+
+.process-steps {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.process-step {
+  border-bottom: 1px solid rgba(44, 43, 40, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.process-step:first-child {
+  border-top: 1px solid rgba(44, 43, 40, 0.1);
+}
+
+.process-step-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 28px 0;
+  transition: padding 0.4s ease;
+}
+
+.process-step.open .process-step-header {
+  padding-bottom: 12px;
+}
+
+.process-step-num {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  color: var(--orange);
+  min-width: 32px;
+}
+
+.process-step-title {
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--text-dark);
+  flex: 1;
+}
+
+.process-step-toggle {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(44, 43, 40, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.4s ease, background 0.3s;
+  font-size: 14px;
+  line-height: 1;
+  text-align: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.process-step.open .process-step-toggle {
+  transform: rotate(45deg);
+  background: var(--orange);
+  border-color: var(--orange);
+  color: white;
+}
+
+.process-step-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+  opacity: 0;
+}
+
+.process-step.open .process-step-body {
+  max-height: 300px;
+  opacity: 1;
+}
+
+.process-step-body-inner {
+  padding: 0 0 28px 56px;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-light);
+  max-width: 560px;
+}
+
+/* ═══════════════════════════════════════════
+   INDUSTRY PRACTICE AREAS — Flair "Process" flat rows
+   ═══════════════════════════════════════════ */
+.ipa-section {
+  padding: 128px 40px;
+  background: var(--bg-cream);
+  position: relative;
+}
+
+.ipa-header {
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: center;
+  margin-bottom: 80px;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.ipa-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 16px;
+}
+
+.ipa-heading {
+  font-family: var(--font-primary);
+  font-size: 42px;
+  line-height: 1.2;
+  color: var(--text-dark);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+.ipa-rows {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.ipa-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+  padding: 40px 24px 40px 40px;
+  position: sticky;
+  background: var(--bg-cream);
+  min-height: 20vh;
+  border-top: 1px solid var(--text-dark);
+  will-change: transform;
+}
+
+/* Incremental sticky tops so rows stack into strips at the top */
+.ipa-row:nth-child(1) { top: 80px;  z-index: 1; }
+.ipa-row:nth-child(2) { top: 140px; z-index: 2; }
+.ipa-row:nth-child(3) { top: 200px; z-index: 3; }
+.ipa-row:nth-child(4) { top: 260px; z-index: 4; }
+.ipa-row:nth-child(5) { top: 320px; z-index: 5; }
+
+/* Last row also gets a bottom border */
+.ipa-row:last-child {
+  border-bottom: 1px solid var(--text-dark);
+}
+
+.ipa-row-step {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding-top: 8px;
+}
+
+.ipa-row-title {
+  font-family: var(--font-sans);
+  font-size: clamp(24px, 3vw, 38px);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--text-dark);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.ipa-row-desc {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: var(--text-light);
+  font-weight: 300;
+  max-width: 440px;
+}
+
+.ipa-footnote {
+  max-width: 1100px;
+  margin: 56px auto 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* services CSS removed — replaced by .why-section above */
+
+/* ═══════════════════════════════════════════
+   NORTH STAR / ARRIVAL
+   ═══════════════════════════════════════════ */
+.arrival {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 48px;
+  background: var(--bg-cream);
+  text-align: center;
+}
+
+.north-star {
+  font-family: var(--font-primary);
+  font-size: clamp(1.4rem, 2.8vw, 2.2rem);
+  font-weight: 300;
+  line-height: 1.45;
+  color: var(--text-dark);
+  max-width: 600px;
+}
+
+.north-star-attr {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  margin-top: 2rem;
+}
+
+/* ═══════════════════════════════════════════
+   TOOLKIT — compact spec-sheet style
+   ═══════════════════════════════════════════ */
+.toolkit-section {
+  padding: 56px 48px 80px;
+  background: rgb(174,185,207);
+}
+
+.toolkit-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.toolkit-divider {
+  display: none;
+}
+
+.toolkit-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 40px;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(44,43,40,0.12);
+  align-items: baseline;
+}
+
+.toolkit-row:last-child {
+  border-bottom: none;
+}
+
+.toolkit-row-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--burgundy);
+}
+
+.toolkit-section-marker {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--burgundy);
+  margin-bottom: 8px;
+}
+
+.toolkit-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toolkit-pill {
+  display: inline-block;
+  padding: 6px 14px;
+  border: 1px solid rgba(44,43,40,0.3);
+  border-radius: 100px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-dark);
+  background: transparent;
+  white-space: nowrap;
+}
+
+.toolkit-strengths {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 32px;
+}
+
+.toolkit-strength {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 10px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-dark);
+}
+
+.toolkit-strength-mark {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--burgundy);
+  padding-top: 2px;
+}
+
+@media (max-width: 768px) {
+  .toolkit-section { padding: 48px 24px 64px; }
+  .toolkit-row { grid-template-columns: 1fr; gap: 16px; }
+  .toolkit-strengths { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════
+   CTA — CONNECT
+   ═══════════════════════════════════════════ */
+.cta-section {
+  padding: 120px 48px 60px;
+  background: rgb(174,185,207);
+}
+
+.cta-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 64px;
+  align-items: center;
+}
+
+.cta-photo-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.cta-photo {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(44,43,40,0.1);
+}
+
+.cta-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cta-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--orange);
+  font-family: var(--font-serif);
+  font-size: 48px;
+  color: #fff;
+  letter-spacing: 0.05em;
+}
+
+.cta-heading {
+  font-family: var(--font-primary);
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 300;
+  line-height: 1.25;
+  color: var(--text-dark);
+  margin-bottom: 20px;
+}
+
+.cta-body {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-light);
+  font-weight: 300;
+  margin-bottom: 32px;
+  max-width: 520px;
+}
+
+.cta-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cta-btn {
+  display: inline-block;
+  padding: 14px 32px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 100px;
+  transition: all 0.3s ease;
+  background: var(--orange);
+  color: #fff;
+}
+
+.cta-btn:hover {
+  background: #c94700;
+  transform: translateY(-1px);
+}
+
+.cta-btn-outline {
+  background: transparent;
+  border: 1px solid rgba(44,43,40,0.2);
+  color: var(--text-dark);
+}
+
+.cta-btn-outline:hover {
+  background: rgba(44,43,40,0.06);
+  border-color: rgba(44,43,40,0.4);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════ */
+.footer {
+  background: rgb(174,185,207);
+  color: var(--text-dark);
+  padding: 80px 48px 40px;
+}
+
+.footer-top {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 64px;
+  padding-bottom: 48px;
+}
+
+.footer-tagline {
+  font-family: var(--font-primary);
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1.4;
+  max-width: 360px;
+}
+
+.footer-col h4 {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.4;
+  margin-bottom: 16px;
+}
+
+.footer-col p,
+.footer-col a {
+  display: block;
+  font-size: 14px;
+  line-height: 1.8;
+  opacity: 0.6;
+  transition: opacity 0.3s;
+}
+
+.footer-col a:hover { opacity: 1; }
+
+.footer-bottom {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding-top: 32px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  opacity: 0.3;
+}
+
+/* ═══════════════════════════════════════════
+   SCROLL LINE — canvas
+   ═══════════════════════════════════════════ */
+#scroll-line-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Push text content above the scroll-line canvas */
+.terminal-header,
+.flip-board,
+.hero-tagline,
+.section-inner,
+.process-header,
+.process-steps,
+.leaders-inner,
+.why-inner,
+.ipa-header,
+.ipa-rows,
+.toolkit-inner,
+.cta-inner,
+.footer-top,
+.footer-bottom {
+  position: relative;
+  z-index: 5;
+}
+
+/* Nav stays fixed — only bump z-index */
+.nav { z-index: 100; }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .nav { padding: 16px 24px; }
+  .nav-links { display: none; }
+  .section { padding: 100px 24px; }
+  .why-section { padding: 100px 24px !important; }
+  .why-section.active { background: var(--orange) !important; }
+  .why-header { flex-direction: column; align-items: flex-start; margin-bottom: 48px; }
+  .why-item { grid-template-columns: 1fr; gap: 12px; }
+  .why-item-num { padding-top: 0; }
+  .process-section { padding: 100px 24px; }
+  .process-step-body-inner { padding-left: 0; }
+  .ipa-section { padding: 100px 24px; }
+  .ipa-row { grid-template-columns: 1fr; gap: 16px; padding: 32px 16px; min-height: auto; position: relative; top: auto !important; }
+  .cta-section { padding: 80px 24px; }
+  .cta-inner { grid-template-columns: 1fr; text-align: center; gap: 40px; }
+  .cta-photo { width: 160px; height: 160px; }
+  .cta-body { max-width: 100%; }
+  .cta-links { justify-content: center; }
+  .footer-top { grid-template-columns: 1fr; gap: 32px; }
+  .flip-board { padding: 1.5rem; }
+  .flip-char { width: 20px; height: 32px; font-size: 0.9rem; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- Scroll line -->
+<canvas id="scroll-line-canvas"></canvas>
+
+<!-- ═══════════ NAVIGATION ═══════════ -->
+<nav class="nav" id="nav">
+  <span class="nav-logo">EMMA MOYSTNER</span>
+  <ul class="nav-links">
+    <li><a href="#manifesto">Manifesto</a></li>
+    <li><a href="#process-section">Process</a></li>
+    <li><a href="#leadership">Leadership</a></li>
+    <li><a href="#culture">Culture</a></li>
+    <li><a href="#why-section">Why It Matters</a></li>
+    <li><a href="#practice-areas">Practice Areas</a></li>
+  </ul>
+  <div>
+    <a href="#cta" class="nav-cta" id="navCta">Connect</a>
+  </div>
+</nav>
+
+
+<!-- ═══════════ HERO: FLIP BOARD ═══════════ -->
+<section id="hero">
+  <div class="terminal-header">
+    <span>Design Operating System</span>
+  </div>
+
+  <div class="flip-board" id="flip-board">
+    <div class="board-title-row">
+      <h2><span class="board-icon"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0011.5 2 1.5 1.5 0 0010 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></span>Departures</h2>
+      <div class="board-clock" id="board-clock">--:--</div>
+    </div>
+    <div class="board-columns">
+      <span>Flight</span>
+      <span>Destination</span>
+      <span>Gate</span>
+      <span>Remark</span>
+    </div>
+    <div id="board-rows"></div>
+  </div>
+
+  <div class="hero-tagline">
+    <h1>Craft in service of systems.<br>Systems in service of <em>humans.</em></h1>
+    <p>Emma Moystner, ArtCenter GIXD 2026</p>
+  </div>
+</section>
+
+<!-- ═══════════ 01 — MANIFESTO ═══════════ -->
+<section class="section" id="manifesto" style="background: var(--bg-cream);">
+  <div class="section-inner">
+    <div class="section-label reveal-up">01 — Manifesto</div>
+    <h2 class="section-heading reveal-up">The Systems We Design Become The Way We Treat People.</h2>
+    <div class="section-body reveal-up">
+      <p>Every system serves someone. A booking flow, a discharge process, a rebooking algorithm at 2 AM — each one is a decision about who matters and how much. Design is where that decision gets made, whether anyone in the room names it or not.</p>
+      <p>I think in systems. Not just how they work, but who they work for — and <span class="highlight">who they leave behind.</span></p>
+      <p>How the same process that feels seamless for one person becomes a wall for another. That's not a UX problem. It's a dignity problem. And it's the reason I design.</p>
+      <p>I believe design leadership is a practice, not a title. It's the practice of seeing entire systems through the lens of human experience, having the courage to advocate for the people inside them, and building up the designers behind you. Empowering them, challenging them, making them better than you found them. Influence isn't given. It's earned by making the work undeniable.</p>
+      <p>I believe empowerment is performance. The leaders I admire most aren't the ones who hoard influence or gatekeep expertise. They lift others up. They lead with generosity even when the pressure is high. A leader who builds capability in others compounds her impact. A leader who only extracts output eventually runs out of both.</p>
+      <p>I believe the stakes demand dignity, not speed. When you're designing for someone who is sick, scared, exhausted, or stranded, you don't get to move fast and break things. Aviation, healthcare, wellness. These aren't products optimizing for engagement. They're systems where design decisions carry real weight, where getting it wrong is measured in human wellbeing, not conversion rates. Design, for me, is a form of service. Service to the humans inside the system. Service to the dignity they deserve. Service to the possibility that the system could be more humane.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 02 — PROCESS & PRACTICE (accordion fold) ═══════════ -->
+<section class="process-section" id="process-section">
+  <div class="process-header">
+    <div class="section-label reveal-up">02 — Process & Practice</div>
+    <h2 class="section-heading reveal-up">How I Work: From Signal to System</h2>
+  </div>
+
+  <div class="process-steps" id="process-steps">
+    <div class="process-step open" data-step="0">
+      <div class="process-step-header">
+        <span class="process-step-num">01</span>
+        <span class="process-step-title">Read the System</span>
+        <span class="process-step-toggle">+</span>
+      </div>
+      <div class="process-step-body">
+        <div class="process-step-body-inner">Before touching a pixel, understand what you're inside of. Regulatory constraints, operational workflows, cross-functional politics, and the lived experience of the humans moving through the system. The design problem is rarely what it looks like on the surface.</div>
+      </div>
+    </div>
+
+    <div class="process-step" data-step="1">
+      <div class="process-step-header">
+        <span class="process-step-num">02</span>
+        <span class="process-step-title">Find the Seams</span>
+        <span class="process-step-toggle">+</span>
+      </div>
+      <div class="process-step-body">
+        <div class="process-step-body-inner">Identify where the system fails the human. The seams between departments, handoffs between channels, moments where someone falls through the cracks. In complex industries, these joints are where design creates the most value.</div>
+      </div>
+    </div>
+
+    <div class="process-step" data-step="2">
+      <div class="process-step-header">
+        <span class="process-step-num">03</span>
+        <span class="process-step-title">Frame the Problem</span>
+        <span class="process-step-toggle">+</span>
+      </div>
+      <div class="process-step-body">
+        <div class="process-step-body-inner">Translate system complexity into a problem the team can act on, in language that engineering, clinical, and operations stakeholders can all hold. The best frame makes the right intervention obvious.</div>
+      </div>
+    </div>
+
+    <div class="process-step" data-step="3">
+      <div class="process-step-header">
+        <span class="process-step-num">04</span>
+        <span class="process-step-title">Design with Data and Craft</span>
+        <span class="process-step-toggle">+</span>
+      </div>
+      <div class="process-step-body">
+        <div class="process-step-body-inner">Bring craft precision to the moments that carry the most weight. In aviation, healthcare, and wellness, those moments are high-stakes and human. Use data to validate, not dictate. The human work stays human: framing, judgment, empathy.</div>
+      </div>
+    </div>
+
+    <div class="process-step" data-step="4">
+      <div class="process-step-header">
+        <span class="process-step-num">05</span>
+        <span class="process-step-title">Zoom Out, Then Zoom In</span>
+        <span class="process-step-toggle">+</span>
+      </div>
+      <div class="process-step-body">
+        <div class="process-step-body-inner">Move between the ecosystem map and the single screen. Pressure-test every detail against the whole, and ground every system decision in what it feels like to be the person inside it. Not a linear process — a continuous reframe.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ LEADERSHIP + CULTURE sections ═══════════ -->
+<section class="leaders-section" id="leadership">
+  <div class="leaders-inner">
+    <div class="leaders-header">
+      <div class="section-label reveal-up">03 — Leadership Learnings</div>
+      <h2 class="section-heading reveal-up">Who I've learned from</h2>
+    </div>
+
+    <div class="leaders-grid">
+      <div class="leader-card hover-area reveal-up" data-side="katie">
+        <div class="photo-follower">
+          <img src="photos/Katie Dill/katie-dill-headshot.webp" alt="Katie Dill" class="active">
+          <img src="photos/Katie Dill/Katie_Dill_headshot-POST.jpg" alt="Katie Dill">
+          <img src="photos/Katie Dill/Stripe.jpg" alt="Stripe">
+          <img src="photos/Katie Dill/lyft.png" alt="Lyft">
+          <img src="photos/Katie Dill/airbnb_vertical_lockup_web.webp" alt="Airbnb">
+        </div>
+
+        <div class="leader-tag">Design Leader</div>
+        <div class="leader-trigger" data-image="katie">Katie Dill</div>
+        <p class="leader-synthesis">
+          Dill built her authority at Stripe and Lyft through <span class="highlight">craft, not title</span>. She proved that design quality directly moves business metrics, and that an IC leader who can still make the work earns a different kind of trust. The lesson: influence isn't granted by hierarchy. It's earned by making the work undeniable.
+        </p>
+      </div>
+
+      <div class="leader-card hover-area reveal-up" data-side="duolingo">
+        <div class="photo-follower">
+          <img src="photos/Duolingo/greenduo.png" alt="Duolingo" class="active">
+          <img src="photos/Duolingo/luis von ahn.avif" alt="Luis von Ahn">
+          <img src="photos/Duolingo/cover_generation-streak-report.png" alt="Duolingo streak">
+          <img src="photos/Duolingo/unnamed.png" alt="Duolingo">
+        </div>
+
+        <div class="leader-tag">Organization</div>
+        <div class="leader-trigger" data-image="duolingo">Duolingo</div>
+        <p class="leader-synthesis">
+          Duolingo proved that data-driven design and human-centered design aren't in tension. <span class="highlight">Rigorous experimentation and playful empathy compound each other.</span> The lesson: empowerment is performance. Leaders who build capability in others compound their impact. Leaders who only extract output eventually run out of both.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="culture" style="background: var(--bg-cream);">
+  <div class="section-inner">
+    <div class="section-label reveal-up">04 — Culture & Collaboration</div>
+    <h2 class="section-heading reveal-up">Where rigor and care coexist</h2>
+    <div class="section-body reveal-up">
+      <p>The teams I want to be part of are organized for clarity. Systems designers hold the big picture: service maps, cross-channel flows, the ecosystem view. Craft specialists own the details where the system meets the human. The IC design leader has deep craft and systems fluency. They influence through quality, not headcount. That's the role I want to grow into.</p>
+      <p>Inside that structure, designers don't sit adjacent to product and engineering. They sit inside the same system, co-creating from problem framing forward. Critique is a practice, not an event. Work gets reviewed against the system it serves, not against aesthetic preference. Growth means craft depth, systems fluency, and the ability to influence without authority. Not output volume. Not visibility.</p>
+      <p>What I want to add to that kind of team is <span class="highlight">rigor and care, held together.</span> Rigor without care produces burnout. Care without rigor produces mediocrity. The best teams I've seen hold both, and they do it through leaders who are kind and empowering even when the pressure is high. People who lift others up instead of hoarding influence. That's the kind of environment where people do the best work of their careers and stay long enough to compound it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 05 — WHY IT MATTERS (Flair "Our Offer" style) ═══════════ -->
+<section class="why-section" id="why-section">
+  <div class="why-inner">
+    <div class="why-header">
+      <div>
+        <div class="why-label">05 — Contribution to Humanity</div>
+        <h2 class="why-heading">The stakes demand dignity</h2>
+      </div>
+    </div>
+
+    <div class="why-items">
+      <div class="why-item" data-why="0">
+        <div class="why-item-num">01</div>
+        <div class="why-item-title">Infrastructure,<br>not product</div>
+        <div class="why-item-desc">Aviation, healthcare, wellness. The systems I want to design for aren't consumer products optimizing for engagement. They're infrastructure for human life at its most consequential.</div>
+      </div>
+
+      <div class="why-item" data-why="1">
+        <div class="why-item-num">02</div>
+        <div class="why-item-title">The UX<br>of dignity</div>
+        <div class="why-item-desc">When someone is sick, scared, or stranded, every UX decision is a dignity decision. The measure isn't whether the interface feels smooth. It's whether the person comes through the system with their dignity intact.</div>
+      </div>
+
+      <div class="why-item" data-why="2">
+        <div class="why-item-num">03</div>
+        <div class="why-item-title">Systems<br>thinkers</div>
+        <div class="why-item-desc">AI is commoditizing production. Ambient computing is dissolving screens. Every one of these shifts demands designers who think in systems and have the courage to ask: who is this serving?</div>
+      </div>
+
+      <div class="why-item" data-why="3">
+        <div class="why-item-num">04</div>
+        <div class="why-item-title">The operating<br>system</div>
+        <div class="why-item-desc">Craft in service of systems. Systems in service of humans. That's the operating system I intend to run on.</div>
+      </div>
+
+      <div class="why-item" data-why="4">
+        <div class="why-item-num">05</div>
+        <div class="why-item-title">The long<br>view</div>
+        <div class="why-item-desc">Products get replaced. Interfaces get redesigned. The screen you spent six months on will eventually be someone else's redesign project. What persists isn't the artifact. It's the standard you held when no one was watching. That's what I want the next designer to inherit.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 06 — INDUSTRY PRACTICE AREAS (Flair Process style) ═══════════ -->
+<section class="ipa-section" id="practice-areas">
+  <div class="ipa-header">
+    <div class="ipa-label reveal-up">06 — Practice Areas</div>
+    <h2 class="ipa-heading reveal-up">Where I Operate</h2>
+  </div>
+
+  <div class="ipa-rows">
+    <div class="ipa-row" data-ipa="0">
+      <div class="ipa-row-step">Area 1</div>
+      <div class="ipa-row-title">AVIATION &<br>TRAVEL</div>
+      <div class="ipa-row-desc">The full passenger journey from booking to baggage claim. Reservation systems, airport operations, disruption recovery, and the emerging intersection of AI, ambient computing, and biometric identity.</div>
+    </div>
+
+    <div class="ipa-row" data-ipa="1">
+      <div class="ipa-row-step">Area 2</div>
+      <div class="ipa-row-title">HEALTHCARE &<br>LIFE SCIENCES</div>
+      <div class="ipa-row-desc">Clinical workflows, patient navigation, discharge processes. Designing for people who are sick, scared, or exhausted, where a well-designed experience is a matter of dignity, safety, and trust.</div>
+    </div>
+
+    <div class="ipa-row" data-ipa="2">
+      <div class="ipa-row-step">Area 3</div>
+      <div class="ipa-row-title">WELLNESS &<br>WELLBEING</div>
+      <div class="ipa-row-desc">Behavioral design for sustained health outcomes. Habit formation, sustained engagement, the systems that support people in maintaining their health, not just recovering from illness.</div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ═══════════ CTA — CONNECT ═══════════ -->
+<section class="cta-section" id="cta">
+  <div class="cta-inner">
+    <div class="cta-photo-wrap">
+      <div class="cta-photo" id="cta-photo">
+        <img src="Headshot_Moystner.jpg" alt="Emma Moystner" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="cta-photo-placeholder" style="display:none;">EM</div>
+      </div>
+    </div>
+    <div class="cta-content">
+      <h2 class="cta-heading">Let's design systems that serve people.</h2>
+      <p class="cta-body">I'm Emma Moystner — a career-changer turned systems-oriented interaction designer from ArtCenter College of Design. If you're working on aviation, healthcare, or wellness systems that need a designer who thinks beyond the screen, I'd love to talk.</p>
+      <div class="cta-links">
+        <a href="mailto:em.moystner@gmail.com" class="cta-btn">Get in Touch</a>
+        <a href="https://www.linkedin.com/in/emmamoystner" class="cta-btn cta-btn-outline" target="_blank">LinkedIn</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ TOOLKIT — compact spec-sheet ═══════════ -->
+<section class="toolkit-section" id="toolkit">
+  <div class="toolkit-inner">
+    <div class="toolkit-section-marker">Toolkit</div>
+    <div class="toolkit-divider"></div>
+
+    <div class="toolkit-row">
+      <div class="toolkit-row-label">Tools</div>
+      <div class="toolkit-pills">
+        <span class="toolkit-pill">Figma</span>
+        <span class="toolkit-pill">Adobe Creative Suite</span>
+        <span class="toolkit-pill">Unity</span>
+        <span class="toolkit-pill">Blender</span>
+        <span class="toolkit-pill">Claude Code</span>
+        <span class="toolkit-pill">Notion</span>
+        <span class="toolkit-pill">Miro</span>
+        <span class="toolkit-pill">HTML / CSS / JS</span>
+      </div>
+    </div>
+
+    <div class="toolkit-row">
+      <div class="toolkit-row-label">Strengths</div>
+      <div class="toolkit-strengths">
+        <div class="toolkit-strength"><span class="toolkit-strength-mark">+</span><span><strong>Systems Thinking.</strong> Reading the full ecosystem before touching a pixel.</span></div>
+        <div class="toolkit-strength"><span class="toolkit-strength-mark">+</span><span><strong>Cross-Functional Facilitation.</strong> Translating between product, engineering, and data.</span></div>
+        <div class="toolkit-strength"><span class="toolkit-strength-mark">+</span><span><strong>Craft Precision.</strong> Deep attention to the moments that matter most.</span></div>
+        <div class="toolkit-strength"><span class="toolkit-strength-mark">+</span><span><strong>Empathic Advocacy.</strong> Arguing for the person inside the system.</span></div>
+        <div class="toolkit-strength"><span class="toolkit-strength-mark">+</span><span><strong>Calm Under Complexity.</strong> Holding ambiguity without collapsing it too soon.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer class="footer">
+  <div class="footer-top">
+    <div class="footer-tagline">Craft in service of systems. Systems in service of humans.</div>
+    <div class="footer-col">
+      <h4>Program</h4>
+      <p>ArtCenter College of Design</p>
+      <p>Graduate IxD, 2026</p>
+    </div>
+    <div class="footer-col">
+      <h4>Connect</h4>
+      <a href="mailto:em.moystner@gmail.com">em.moystner@gmail.com</a>
+      <a href="#">LinkedIn</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 Emma Moystner</span>
+    <span style="opacity: 0.5;">Design Operating System</span>
+  </div>
+</footer>
+
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════ -->
+<script>
+// ——————————————————————————————————————
+// LENIS SMOOTH SCROLL
+// ——————————————————————————————————————
+const lenis = new Lenis({
+  duration: 1.2,
+  easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+  smooth: true,
+});
+
+function raf(time) {
+  lenis.raf(time);
+  requestAnimationFrame(raf);
+}
+requestAnimationFrame(raf);
+
+lenis.on('scroll', ScrollTrigger.update);
+gsap.ticker.add((time) => lenis.raf(time * 1000));
+gsap.ticker.lagSmoothing(0);
+
+// Smooth anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', (e) => {
+    e.preventDefault();
+    const target = document.querySelector(anchor.getAttribute('href'));
+    if (target) lenis.scrollTo(target, { offset: -80 });
+  });
+});
+
+// ——————————————————————————————————————
+// SPLIT-FLAP DEPARTURE BOARD
+// ——————————————————————————————————————
+const CHARS = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-:.';
+
+// Departures: what we're leaving behind
+const OLD_ROWS = [
+  { code: 'DX-01', dest: 'PIXEL PUSHING',      gate: '--', status: 'DELAYED'  },
+  { code: 'DX-02', dest: 'OUTPUT OVER CRAFT',  gate: '--', status: 'DELAYED'  },
+  { code: 'DX-03', dest: 'SILOED DESIGN',      gate: '--', status: 'DELAYED'  },
+  { code: 'DX-04', dest: 'SPEED OVER DIGNITY', gate: '--', status: 'CANCELED' },
+  { code: 'DX-05', dest: 'JUST MAKE IT PRETTY', gate: '--', status: 'CANCELED' },
+];
+
+// Arrivals: where we're headed
+const NEW_ROWS = [
+  { code: 'EM-01', dest: 'SYSTEMS THINKING',   gate: 'A1', status: 'BOARDING' },
+  { code: 'EM-02', dest: 'DIGNITY BY DESIGN',  gate: 'A3', status: 'ON TIME'  },
+  { code: 'EM-03', dest: 'CRAFT AS INFLUENCE', gate: 'B2', status: 'ON TIME'  },
+  { code: 'EM-04', dest: 'LEAD BY MAKING',     gate: 'B5', status: 'BOARDING' },
+  { code: 'EM-05', dest: 'HUMAN INFRASTRUCTURE', gate: 'C1', status: 'ON TIME'  },
+];
+
+const FIELD_WIDTHS = { code: 5, dest: 20, gate: 3, status: 8 };
+const FIELD_STYLES = { code: 'white-char', dest: 'white-char', gate: 'white-char', status: 'status-char' };
+
+function padStr(str, len) { return (str + ' '.repeat(len)).slice(0, len); }
+
+function createFlipCell(width, styleClass) {
+  const cell = document.createElement('div');
+  cell.className = 'flip-cell';
+  for (let i = 0; i < width; i++) {
+    const ch = document.createElement('div');
+    ch.className = 'flip-char' + (styleClass ? ' ' + styleClass : '');
+    ch.textContent = ' ';
+    cell.appendChild(ch);
+  }
+  return cell;
+}
+
+function buildBoard() {
+  const container = document.getElementById('board-rows');
+  OLD_ROWS.forEach(() => {
+    const row = document.createElement('div');
+    row.className = 'flip-row';
+    ['code', 'dest', 'gate', 'status'].forEach((field) => {
+      const cell = createFlipCell(FIELD_WIDTHS[field], FIELD_STYLES[field]);
+      if (field === 'status') cell.querySelectorAll('.flip-char').forEach(ch => ch.classList.add('negative'));
+      row.appendChild(cell);
+    });
+    container.appendChild(row);
+  });
+}
+
+function flipTo(targetData, boardId, staggerBase, stepInterval) {
+  const board = document.getElementById(boardId);
+  const rows = board.querySelectorAll('.flip-row');
+  const fields = ['code', 'dest', 'gate', 'status'];
+
+  rows.forEach((row, rowIdx) => {
+    const flight = targetData[rowIdx];
+    const cells = row.querySelectorAll('.flip-cell');
+
+    cells.forEach((cell, fi) => {
+      const target = padStr(flight[fields[fi]], FIELD_WIDTHS[fields[fi]]);
+      const chars = cell.querySelectorAll('.flip-char');
+
+      chars.forEach((ch, ci) => {
+        const targetChar = target[ci] || ' ';
+        if (ch.textContent === targetChar) return;
+
+        const totalSteps = 4 + Math.floor(Math.random() * 12);
+        const baseDelay = rowIdx * staggerBase + ci * 30 + fi * 50;
+
+        setTimeout(() => {
+          let s = 0;
+          const int = setInterval(() => {
+            if (s >= totalSteps) {
+              ch.textContent = targetChar;
+              ch.classList.remove('flipping');
+              clearInterval(int);
+              return;
+            }
+            ch.textContent = CHARS[Math.floor(Math.random() * CHARS.length)];
+            ch.classList.add('flipping');
+            setTimeout(() => ch.classList.remove('flipping'), 30);
+            s++;
+          }, stepInterval);
+        }, baseDelay);
+      });
+    });
+  });
+}
+
+let boardState = 'departures'; // 'departures' or 'arrivals'
+let boardLocked = false; // prevent rapid clicking during animation
+const planeIcon = '<span class="board-icon"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0011.5 2 1.5 1.5 0 0010 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></span>';
+
+function setBoardTitle(label) {
+  const titleEl = document.querySelector('#flip-board .board-title-row h2');
+  if (titleEl) titleEl.innerHTML = planeIcon + label;
+}
+
+function showDepartures() {
+  boardState = 'departures';
+  setBoardTitle('Departures');
+  // Add 'negative' class to status chars for red color
+  document.querySelectorAll('#flip-board .flip-row').forEach(row => {
+    const statusCell = row.querySelectorAll('.flip-cell')[3];
+    if (statusCell) statusCell.querySelectorAll('.flip-char').forEach(ch => ch.classList.add('negative'));
+  });
+  flipTo(OLD_ROWS, 'flip-board', 250, 45);
+}
+
+function showArrivals() {
+  boardState = 'arrivals';
+  setBoardTitle('Arrivals');
+  // Remove 'negative' class for green color
+  document.querySelectorAll('#flip-board .flip-char.negative').forEach(ch => ch.classList.remove('negative'));
+  flipTo(NEW_ROWS, 'flip-board', 200, 40);
+}
+
+function toggleBoard() {
+  if (boardLocked) return;
+  boardLocked = true;
+  if (boardState === 'departures') {
+    showArrivals();
+  } else {
+    showDepartures();
+  }
+  setTimeout(() => { boardLocked = false; }, 3000);
+}
+
+function animateBoard() {
+  showDepartures();
+  // Auto-flip to arrivals after 5s
+  setTimeout(() => {
+    if (boardState === 'departures') showArrivals();
+  }, 5000);
+}
+
+// Click to toggle between Departures/Arrivals
+document.querySelector('#flip-board .board-title-row').addEventListener('click', toggleBoard);
+document.querySelector('#flip-board .board-title-row').style.cursor = 'pointer';
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('board-clock').textContent =
+    String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+}
+
+buildBoard();
+
+// ——————————————————————————————————————
+// SCROLL ANIMATIONS
+// ——————————————————————————————————————
+gsap.registerPlugin(ScrollTrigger);
+
+// Hero entrance
+const heroTL = gsap.timeline({ delay: 0.3 });
+heroTL
+  .to('.terminal-header', { opacity: 1, duration: 0.6, ease: 'power2.out' })
+  .to('.flip-board', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.3')
+  .add(() => { animateBoard(); updateClock(); setInterval(updateClock, 30000); }, '-=0.4')
+  .to('.hero-tagline', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.3');
+
+// Nav scroll behavior
+ScrollTrigger.create({
+  trigger: '#hero',
+  start: 'bottom top',
+  onEnter: () => {
+    document.getElementById('nav').classList.add('scrolled');
+    document.getElementById('navCta').classList.add('visible');
+  },
+  onLeaveBack: () => {
+    document.getElementById('nav').classList.remove('scrolled');
+    document.getElementById('navCta').classList.remove('visible');
+  }
+});
+
+// ——————————————————————————————————————
+// SECTION REVEAL-UP ANIMATIONS
+// ——————————————————————————————————————
+gsap.utils.toArray('.reveal-up').forEach((el) => {
+  gsap.to(el, {
+    opacity: 1,
+    y: 0,
+    duration: 0.9,
+    ease: 'power3.out',
+    scrollTrigger: {
+      trigger: el,
+      start: 'top 85%',
+      toggleActions: 'play none none none'
+    }
+  });
+});
+
+// ——————————————————————————————————————
+// LEADERSHIP LEARNINGS — cursor-following photo that cycles on movement
+// Flair pattern: one image visible, switches after THRESHOLD px of mouse travel
+// ——————————————————————————————————————
+document.querySelectorAll('.leader-card.hover-area').forEach(card => {
+  const follower = card.querySelector('.photo-follower');
+  if (!follower) return;
+  const images = follower.querySelectorAll('img');
+  if (images.length === 0) return;
+
+  const THRESHOLD = 120; // px of mouse travel before image switches
+  const LERP = 0.15;
+
+  let ci = 0;
+  let lx = 0, ly = 0;
+  let dt = 0;
+  let inside = false;
+  let tx = 0, ty = 0;
+  let cx = 0, cy = 0;
+
+  function nextImage() {
+    images[ci].classList.remove('active');
+    ci = (ci + 1) % images.length;
+    images[ci].classList.add('active');
+  }
+
+  card.addEventListener('mouseenter', (e) => {
+    const r = card.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+    cx = tx = lx = x;
+    cy = ty = ly = y;
+    follower.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+    follower.classList.add('visible');
+    inside = true;
+  });
+
+  card.addEventListener('mouseleave', () => {
+    follower.classList.remove('visible');
+    inside = false;
+    dt = 0;
+  });
+
+  card.addEventListener('mousemove', (e) => {
+    const r = card.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+    tx = x;
+    ty = y;
+
+    const dist = Math.hypot(x - lx, y - ly);
+    dt += dist;
+    lx = x;
+    ly = y;
+
+    if (dt >= THRESHOLD) {
+      dt = 0;
+      nextImage();
+    }
+  });
+
+  (function animate() {
+    if (inside) {
+      cx = cx + (tx - cx) * LERP;
+      cy = cy + (ty - cy) * LERP;
+      follower.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
+    }
+    requestAnimationFrame(animate);
+  })();
+});
+
+// ——————————————————————————————————————
+// PROCESS ACCORDION
+// ——————————————————————————————————————
+document.querySelectorAll('.process-step-header').forEach(header => {
+  header.addEventListener('click', () => {
+    const step = header.parentElement;
+    const wasOpen = step.classList.contains('open');
+
+    // Close all
+    document.querySelectorAll('.process-step').forEach(s => s.classList.remove('open'));
+
+    // Toggle clicked
+    if (!wasOpen) step.classList.add('open');
+
+    // Rebuild scroll line path after the accordion transition completes
+    // so the plane stays aligned with the new content layout
+    setTimeout(() => {
+      if (window.__rebuildScrollLine) window.__rebuildScrollLine();
+    }, 550);
+  });
+});
+
+// ——————————————————————————————————————
+// INDUSTRY PRACTICE AREAS — Flair fold-up staggered entrance
+// All rows trigger from the section entering viewport,
+// with staggered delays (0.1s increments) matching Flair's Framer config
+// ——————————————————————————————————————
+const ipaHeader = document.querySelector('.ipa-header');
+const ipaFootnote = document.querySelector('.ipa-footnote');
+const ipaRows = document.querySelectorAll('.ipa-row');
+
+// Custom ease matching Flair: cubic-bezier(0.44, 0, 0.56, 1) — ease-in-out-sine
+const foldEase = 'sine.inOut';
+
+// Header fades up when section enters
+gsap.to(ipaHeader, {
+  opacity: 1,
+  y: 0,
+  duration: 0.4,
+  ease: foldEase,
+  scrollTrigger: {
+    trigger: '.ipa-section',
+    start: 'top 75%',
+    toggleActions: 'play none none none'
+  }
+});
+
+// Rows use sticky-stack scroll behavior (CSS driven), no GSAP fade needed
+
+// Footnote follows the last row
+if (ipaFootnote) {
+  gsap.to(ipaFootnote, {
+    opacity: 1,
+    y: 0,
+    duration: 0.4,
+    delay: (ipaRows.length + 1) * 0.1,
+    ease: foldEase,
+    scrollTrigger: {
+      trigger: '.ipa-section',
+      start: 'top 60%',
+      toggleActions: 'play none none none'
+    }
+  });
+}
+
+// ——————————————————————————————————————
+// WHY IT MATTERS — bg fade from cream → orange on scroll
+// ——————————————————————————————————————
+const whySec = document.querySelector('.why-section');
+ScrollTrigger.create({
+  trigger: whySec,
+  start: 'top 60%',
+  onEnter: () => {
+    whySec.classList.add('active');
+    whySec.style.background = 'var(--orange)';
+  },
+  onLeaveBack: () => {
+    whySec.classList.remove('active');
+    whySec.style.background = 'var(--bg-cream)';
+  }
+});
+
+// Staggered item reveals (after bg transition)
+document.querySelectorAll('.why-item').forEach((item, i) => {
+  gsap.to(item, {
+    opacity: 1,
+    y: 0,
+    duration: 0.8,
+    delay: i * 0.1 + 0.3,
+    ease: 'power3.out',
+    scrollTrigger: {
+      trigger: whySec,
+      start: 'top 50%',
+      toggleActions: 'play none none none'
+    }
+  });
+});
+
+// ——————————————————————————————————————
+// NORTH STAR + CTA SECTIONS
+// ——————————————————————————————————————
+gsap.from('.north-star', {
+  opacity: 0,
+  y: 30,
+  duration: 1,
+  ease: 'power3.out',
+  scrollTrigger: {
+    trigger: '.arrival',
+    start: 'top 70%',
+    toggleActions: 'play none none none'
+  }
+});
+
+gsap.from('.cta-inner', {
+  opacity: 0,
+  y: 40,
+  duration: 0.9,
+  ease: 'power3.out',
+  scrollTrigger: {
+    trigger: '.cta-section',
+    start: 'top 75%',
+    toggleActions: 'play none none none'
+  }
+});
+
+// ——————————————————————————————————————
+// SCROLL LINE + PAPER AIRPLANE
+// Orange paper plane flies the path; line is its contrail
+// Plane starts still under hero tagline, takes flight on scroll
+// ——————————————————————————————————————
+(function() {
+  const canvas = document.getElementById('scroll-line-canvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio, 2);
+
+  function sizeCanvas() {
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  sizeCanvas();
+
+  let curves = [];
+  let totalArcLength = 0;
+  let arcLengthSamples = [];
+
+  // --- Paper airplane drawing function ---
+  function drawPlane(cx, cy, angle, size) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.scale(size, size);
+
+    // Paper airplane shape — nose points right (angle 0 = flying right)
+    ctx.beginPath();
+    // Nose
+    ctx.moveTo(16, 0);
+    // Top wing edge
+    ctx.lineTo(-10, -8);
+    // Top wing fold
+    ctx.lineTo(-4, -1);
+    // Tail notch
+    ctx.lineTo(-12, -3);
+    // Center back
+    ctx.lineTo(-6, 0);
+    // Mirror bottom
+    ctx.lineTo(-12, 3);
+    ctx.lineTo(-4, 1);
+    ctx.lineTo(-10, 8);
+    // Back to nose
+    ctx.closePath();
+
+    ctx.fillStyle = '#E15304';
+    ctx.fill();
+
+    // Wing fold highlight for 3D feel
+    ctx.beginPath();
+    ctx.moveTo(16, 0);
+    ctx.lineTo(-4, -1);
+    ctx.lineTo(-6, 0);
+    ctx.lineTo(-4, 1);
+    ctx.closePath();
+    ctx.fillStyle = '#c94700';
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function buildPath() {
+    const w = window.innerWidth;
+    const heroEl = document.getElementById('hero');
+    const whySection = document.getElementById('why-section');
+    const startY = heroEl.offsetTop + heroEl.offsetHeight - 80;
+    const endY = whySection ? whySection.offsetTop + 200 : document.documentElement.scrollHeight;
+    const totalH = endY - startY;
+
+    function y(frac) { return startY + totalH * frac; }
+
+    // Anchor points — big sweeping Flair-style S-curves
+    // Final anchors curve up and off the right edge so the plane "takes off"
+    // as section 5 comes into view (rather than nose-diving into it)
+    const anchors = [
+      { x: w * 0.50, y: y(-0.01) },   // start: centered under tagline
+      { x: w * 0.78, y: y(0.04) },    // drift right
+      { x: w * 0.20, y: y(0.14) },    // sweep to left
+      { x: w * 0.08, y: y(0.26) },    // far left, looping down
+      { x: w * 0.88, y: y(0.38) },    // big sweep to right
+      { x: w * 0.18, y: y(0.52) },    // sweep back to left
+      { x: w * 0.12, y: y(0.64) },    // left side
+      { x: w * 0.70, y: y(0.78) },    // sweep right again
+      { x: w * 0.90, y: y(0.86) },    // curve upward, gaining altitude
+      { x: w * 1.15, y: y(0.80) },    // climb off the right edge (plane takes off)
+      { x: w * 1.40, y: y(0.70) },    // continue climbing off-screen
+    ];
+
+    // Catmull-Rom → cubic bezier for guaranteed smooth curves
+    curves = [{ type: 'M', x: anchors[0].x, y: anchors[0].y }];
+
+    for (let i = 0; i < anchors.length - 1; i++) {
+      const p0 = anchors[Math.max(i - 1, 0)];
+      const p1 = anchors[i];
+      const p2 = anchors[i + 1];
+      const p3 = anchors[Math.min(i + 2, anchors.length - 1)];
+      const tension = 6;
+      curves.push({
+        type: 'C',
+        cp1x: p1.x + (p2.x - p0.x) / tension,
+        cp1y: p1.y + (p2.y - p0.y) / tension,
+        cp2x: p2.x - (p3.x - p1.x) / tension,
+        cp2y: p2.y - (p3.y - p1.y) / tension,
+        x: p2.x,
+        y: p2.y,
+      });
+    }
+
+    sampleArcLength();
+  }
+
+  function cubicBez(p0, p1, p2, p3, t) {
+    const mt = 1 - t;
+    return mt*mt*mt*p0 + 3*mt*mt*t*p1 + 3*mt*t*t*p2 + t*t*t*p3;
+  }
+
+  // Derivative of cubic bezier (for tangent/direction)
+  function cubicBezDeriv(p0, p1, p2, p3, t) {
+    const mt = 1 - t;
+    return 3*mt*mt*(p1-p0) + 6*mt*t*(p2-p1) + 3*t*t*(p3-p2);
+  }
+
+  function sampleArcLength() {
+    arcLengthSamples = [];
+    totalArcLength = 0;
+    const STEPS_PER_CURVE = 100;
+    let prevX, prevY;
+
+    for (let i = 0; i < curves.length; i++) {
+      const seg = curves[i];
+      if (seg.type === 'M') {
+        prevX = seg.x;
+        prevY = seg.y;
+        arcLengthSamples.push({ curveIdx: i, t: 0, dist: 0, x: seg.x, y: seg.y });
+        continue;
+      }
+      const prev = curves[i-1];
+      const sx = prev.x, sy = prev.y;
+
+      for (let s = 1; s <= STEPS_PER_CURVE; s++) {
+        const t = s / STEPS_PER_CURVE;
+        const nx = cubicBez(sx, seg.cp1x, seg.cp2x, seg.x, t);
+        const ny = cubicBez(sy, seg.cp1y, seg.cp2y, seg.y, t);
+        const dx = nx - prevX, dy = ny - prevY;
+        totalArcLength += Math.sqrt(dx*dx + dy*dy);
+        arcLengthSamples.push({ curveIdx: i, t: t, dist: totalArcLength, x: nx, y: ny });
+        prevX = nx;
+        prevY = ny;
+      }
+    }
+  }
+
+  // Get position and tangent angle at a given arc-length distance
+  function getPosAndAngle(targetDist) {
+    if (targetDist <= 0) {
+      const start = curves[0];
+      return { x: start.x, y: start.y, angle: Math.PI * 0.4 }; // pointing down-right at rest
+    }
+
+    // Find the sample bracket
+    let s1 = arcLengthSamples[0], s2 = arcLengthSamples[1];
+    for (let i = 1; i < arcLengthSamples.length; i++) {
+      if (arcLengthSamples[i].dist >= targetDist) {
+        s1 = arcLengthSamples[i - 1];
+        s2 = arcLengthSamples[i];
+        break;
+      }
+      if (i === arcLengthSamples.length - 1) {
+        s1 = arcLengthSamples[i - 1];
+        s2 = arcLengthSamples[i];
+      }
+    }
+
+    // Interpolate position
+    const segIdx = s2.curveIdx;
+    const seg = curves[segIdx];
+    if (!seg || seg.type === 'M') return { x: s2.x, y: s2.y, angle: 0 };
+
+    const prev = curves[segIdx - 1];
+    const sx = prev.x, sy = prev.y;
+    const t = s2.t;
+
+    const x = cubicBez(sx, seg.cp1x, seg.cp2x, seg.x, t);
+    const y = cubicBez(sy, seg.cp1y, seg.cp2y, seg.y, t);
+
+    // Tangent
+    const tdx = cubicBezDeriv(sx, seg.cp1x, seg.cp2x, seg.x, t);
+    const tdy = cubicBezDeriv(sy, seg.cp1y, seg.cp2y, seg.y, t);
+    const angle = Math.atan2(tdy, tdx);
+
+    return { x, y, angle };
+  }
+
+  buildPath();
+
+  let animatedProgress = 0;
+
+  function draw() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    const scrollY = window.scrollY || 0;
+    const viewMid = scrollY + h * 0.55;
+
+    const heroEl = document.getElementById('hero');
+    const whySection = document.getElementById('why-section');
+    const lineTop = heroEl.offsetTop + heroEl.offsetHeight - 80;
+    const lineBot = whySection ? whySection.offsetTop + 200 : document.documentElement.scrollHeight;
+    const rawProgress = (viewMid - lineTop) / (lineBot - lineTop);
+    const scrollProgress = Math.min(Math.max(rawProgress, 0), 1);
+
+    animatedProgress += (scrollProgress - animatedProgress) * 0.12;
+
+    // Get plane position
+    const targetDist = Math.max(animatedProgress, 0) * totalArcLength;
+    const planePos = getPosAndAngle(targetDist);
+    const planeScreenX = planePos.x;
+    const planeScreenY = planePos.y - scrollY;
+
+    // --- Draw contrail (the line behind the plane) ---
+    if (animatedProgress > 0.001) {
+      ctx.save();
+      ctx.strokeStyle = '#E15304';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+
+      let drawing = false;
+
+      for (let i = 0; i < curves.length; i++) {
+        const seg = curves[i];
+
+        if (seg.type === 'M') {
+          ctx.moveTo(seg.x, seg.y - scrollY);
+          drawing = true;
+          continue;
+        }
+        if (!drawing) continue;
+
+        const prev = curves[i-1];
+        const sx = prev.x, sy = prev.y;
+        const segSamples = arcLengthSamples.filter(s => s.curveIdx === i);
+        if (segSamples.length === 0) continue;
+        const segEndDist = segSamples[segSamples.length - 1].dist;
+
+        if (segEndDist <= targetDist) {
+          ctx.bezierCurveTo(
+            seg.cp1x, seg.cp1y - scrollY,
+            seg.cp2x, seg.cp2y - scrollY,
+            seg.x, seg.y - scrollY
+          );
+        } else {
+          let partialT = 0;
+          for (let s = 0; s < segSamples.length; s++) {
+            if (segSamples[s].dist >= targetDist) {
+              if (s === 0) {
+                partialT = segSamples[s].t * (targetDist / Math.max(segSamples[s].dist, 0.001));
+              } else {
+                const ps = segSamples[s-1];
+                const frac = (targetDist - ps.dist) / (segSamples[s].dist - ps.dist);
+                partialT = ps.t + frac * (segSamples[s].t - ps.t);
+              }
+              break;
+            }
+          }
+
+          const p0x = sx, p0y = sy;
+          const p1x = seg.cp1x, p1y = seg.cp1y;
+          const p2x = seg.cp2x, p2y = seg.cp2y;
+          const p3x = seg.x, p3y = seg.y;
+          const t = partialT;
+          const q0x = p0x + t*(p1x-p0x), q0y = p0y + t*(p1y-p0y);
+          const q1x = p1x + t*(p2x-p1x), q1y = p1y + t*(p2y-p1y);
+          const r0x = q0x + t*(q1x-q0x), r0y = q0y + t*(q1y-q0y);
+
+          ctx.bezierCurveTo(
+            q0x, q0y - scrollY,
+            r0x, r0y - scrollY,
+            cubicBez(p0x, p1x, p2x, p3x, t),
+            cubicBez(p0y, p1y, p2y, p3y, t) - scrollY
+          );
+          break;
+        }
+      }
+
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // --- Draw the paper airplane at the tip ---
+    // Fade out as the plane exits the right edge (taking off)
+    if (planeScreenY > -60 && planeScreenY < h + 60) {
+      const planeSize = 1.4;
+      // Fade begins once plane crosses past the right edge
+      const fadeStart = w * 0.95;
+      const fadeEnd = w * 1.15;
+      let planeAlpha = 1;
+      if (planeScreenX > fadeStart) {
+        planeAlpha = Math.max(0, 1 - (planeScreenX - fadeStart) / (fadeEnd - fadeStart));
+      }
+      if (planeAlpha > 0.01) {
+        ctx.globalAlpha = planeAlpha;
+        drawPlane(planeScreenX, planeScreenY, planePos.angle, planeSize);
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+
+  window.addEventListener('resize', () => {
+    sizeCanvas();
+    buildPath();
+  });
+
+  // Expose rebuild so other UI (e.g. accordion open/close) can re-sync the path
+  window.__rebuildScrollLine = buildPath;
+})();
+</script>
+
+</body>
+</html>
