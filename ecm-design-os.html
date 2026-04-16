@@ -1331,11 +1331,11 @@ img { display: block; max-width: 100%; }
     <div class="leaders-grid">
       <div class="leader-card hover-area reveal-up" data-side="katie">
         <div class="photo-follower">
-          <img src="photos/Katie Dill/katie-dill-headshot.webp" alt="Katie Dill" class="active">
-          <img src="photos/Katie Dill/Katie_Dill_headshot-POST.jpg" alt="Katie Dill">
-          <img src="photos/Katie Dill/Stripe.jpg" alt="Stripe">
-          <img src="photos/Katie Dill/lyft.png" alt="Lyft">
-          <img src="photos/Katie Dill/airbnb_vertical_lockup_web.webp" alt="Airbnb">
+          <img src="photos/katie-dill/katie-dill-headshot.webp" alt="Katie Dill" class="active">
+          <img src="photos/katie-dill/Katie_Dill_headshot-POST.jpg" alt="Katie Dill">
+          <img src="photos/katie-dill/Stripe.jpg" alt="Stripe">
+          <img src="photos/katie-dill/lyft.png" alt="Lyft">
+          <img src="photos/katie-dill/airbnb_vertical_lockup_web.webp" alt="Airbnb">
         </div>
 
         <div class="leader-tag">Design Leader</div>
@@ -1348,7 +1348,7 @@ img { display: block; max-width: 100%; }
       <div class="leader-card hover-area reveal-up" data-side="duolingo">
         <div class="photo-follower">
           <img src="photos/Duolingo/greenduo.png" alt="Duolingo" class="active">
-          <img src="photos/Duolingo/luis von ahn.avif" alt="Luis von Ahn">
+          <img src="photos/Duolingo/luis-von-ahn.avif" alt="Luis von Ahn">
           <img src="photos/Duolingo/cover_generation-streak-report.png" alt="Duolingo streak">
           <img src="photos/Duolingo/unnamed.png" alt="Duolingo">
         </div>
@@ -2017,7 +2017,7 @@ gsap.from('.cta-inner', {
     const w = window.innerWidth;
     const heroEl = document.getElementById('hero');
     const whySection = document.getElementById('why-section');
-    const startY = heroEl.offsetTop + heroEl.offsetHeight - 80;
+    const startY = heroEl.offsetTop + heroEl.offsetHeight + 40;
     const endY = whySection ? whySection.offsetTop + 200 : document.documentElement.scrollHeight;
     const totalH = endY - startY;
 
@@ -2027,7 +2027,7 @@ gsap.from('.cta-inner', {
     // Final anchors curve up and off the right edge so the plane "takes off"
     // as section 5 comes into view (rather than nose-diving into it)
     const anchors = [
-      { x: w * 0.50, y: y(-0.01) },   // start: centered under tagline
+      { x: w * 0.50, y: y(0.01) },    // start: below hero tagline
       { x: w * 0.78, y: y(0.04) },    // drift right
       { x: w * 0.20, y: y(0.14) },    // sweep to left
       { x: w * 0.08, y: y(0.26) },    // far left, looping down
