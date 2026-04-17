@@ -2016,8 +2016,9 @@ gsap.from('.cta-inner', {
   function buildPath() {
     const w = window.innerWidth;
     const heroEl = document.getElementById('hero');
+    const heroTagline = document.querySelector('.hero-tagline');
     const whySection = document.getElementById('why-section');
-    const startY = heroEl.offsetTop + heroEl.offsetHeight + 40;
+    const startY = heroTagline ? heroTagline.offsetTop + heroTagline.offsetHeight - 20 : heroEl.offsetTop + heroEl.offsetHeight + 40;
     const endY = whySection ? whySection.offsetTop + 200 : document.documentElement.scrollHeight;
     const totalH = endY - startY;
 
